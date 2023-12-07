@@ -31,12 +31,10 @@ import (
 	"open-match.dev/open-match/pkg/pb"
 )
 
-var (
-	logger = logrus.WithFields(logrus.Fields{
-		"app":       "openmatch",
-		"component": "app.synchronizer",
-	})
-)
+var logger = logrus.WithFields(logrus.Fields{
+	"app":       "openmatch",
+	"component": "app.synchronizer",
+})
 
 // Matches flow through channels in the synchronizer.  Channel variable names
 // are used to be consistent between function calls to help track everything.
@@ -158,7 +156,6 @@ func (s *synchronizerService) Synchronize(stream ipb.Synchronizer_SynchronizeSer
 			return registration.cycleCtx.Err()
 		}
 	}
-
 }
 
 ///////////////////////////////////////
@@ -208,6 +205,8 @@ func (s synchronizerService) register(ctx context.Context) *registration {
 ///////////////////////////////////////
 
 func (s *synchronizerService) runCycle() {
+	logger.Error("Starting Cycle Loop")
+
 	cst := time.Now()
 	/////////////////////////////////////// Initialize cycle
 	ctx, cancel := contextcause.WithCancelCause(context.Background())
@@ -297,10 +296,14 @@ Registration:
 	// Clean up in case it was never needed.
 	cancelProposalCollection.Stop()
 
+	logger.Errorf("Normal sync loop took %s", time.Since(cst).String())
+	startBackfill := time.Now()
 	err := s.store.CleanupBackfills(ctx)
 	if err != nil {
 		logger.Errorf("Failed to clean up backfills, %s", err.Error())
+		logger.Errorf("HERE IS ANOTHER MESSAGE")
 	}
+	logger.Errorf("Took %s to cleanup backfill %s", time.Since(startBackfill).String())
 }
 
 ///////////////////////////////////////

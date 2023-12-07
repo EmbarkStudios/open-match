@@ -54,7 +54,7 @@
 # http://makefiletutorial.com/
 
 BASE_VERSION = 1.8.0
-SHORT_SHA = $(shell git rev-parse --short=7 HEAD | tr -d [:punct:])
+SHORT_SHA = joakim_test
 BRANCH_NAME = $(shell git rev-parse --abbrev-ref HEAD | tr -d [:punct:])
 VERSION = $(BASE_VERSION)-$(SHORT_SHA)
 BUILD_DATE = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -200,7 +200,7 @@ ALL_PROTOS = $(GOLANG_PROTOS) $(SWAGGER_JSON_DOCS)
 CMDS = $(notdir $(wildcard cmd/*))
 
 # Names of the individual images, ommiting the openmatch prefix.
-IMAGES = $(CMDS) mmf-go-soloduel mmf-go-backfill base-build
+IMAGES = $(CMDS)
 
 help:
 	@cat Makefile | grep ^\#\# | grep -v ^\#\#\# |cut -c 4-

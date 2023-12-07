@@ -32,12 +32,10 @@ import (
 	"open-match.dev/open-match/pkg/pb"
 )
 
-var (
-	evaluatorClientLogger = logrus.WithFields(logrus.Fields{
-		"app":       "openmatch",
-		"component": "app.synchronizer.evaluator_client",
-	})
-)
+var evaluatorClientLogger = logrus.WithFields(logrus.Fields{
+	"app":       "openmatch",
+	"component": "app.synchronizer.evaluator_client",
+})
 
 type evaluator interface {
 	evaluate(context.Context, <-chan []*pb.Match, chan<- string) error
@@ -199,6 +197,8 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	logger.Error("started running sync")
+
 	sc := make(chan error, 1)
 	defer close(sc)
 	go func() {
@@ -248,6 +248,8 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 	go func() {
 		defer wg.Done()
 
+		logger.Error("here is more data")
+
 		dec := json.NewDecoder(resp.Body)
 		for {
 			var item struct {
@@ -271,6 +273,8 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 				rc <- status.Errorf(codes.Unavailable, "failed to execute jsonpb.UnmarshalString(%s, &proposal): %v.", item.Result, err)
 				return
 			}
+			logger.Error("got ids")
+
 			acceptedIds <- resp.GetMatchId()
 		}
 	}()

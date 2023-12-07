@@ -197,8 +197,6 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	logger.Error("started running sync")
-
 	sc := make(chan error, 1)
 	defer close(sc)
 	go func() {
@@ -248,8 +246,6 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 	go func() {
 		defer wg.Done()
 
-		logger.Error("here is more data")
-
 		dec := json.NewDecoder(resp.Body)
 		for {
 			var item struct {
@@ -273,8 +269,6 @@ func (ec *httpEvaluatorClient) evaluate(ctx context.Context, pc <-chan []*pb.Mat
 				rc <- status.Errorf(codes.Unavailable, "failed to execute jsonpb.UnmarshalString(%s, &proposal): %v.", item.Result, err)
 				return
 			}
-			logger.Error("got ids")
-
 			acceptedIds <- resp.GetMatchId()
 		}
 	}()

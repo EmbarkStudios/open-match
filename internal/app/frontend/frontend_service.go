@@ -54,10 +54,13 @@ func (s *frontendService) CreateTicket(ctx context.Context, req *pb.CreateTicket
 	if req.Ticket == nil {
 		return nil, status.Errorf(codes.InvalidArgument, ".ticket is required")
 	}
+	if req.Ticket.Id != "" && !s.cfg.GetBool("isSimulation") {
+		return nil, status.Errorf(codes.InvalidArgument, "tickets cannot be created with an id")
+	}
 	if req.Ticket.Assignment != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "tickets cannot be created with an assignment")
 	}
-	if req.Ticket.CreateTime != nil {
+	if req.Ticket.CreateTime != nil && !s.cfg.GetBool("isSimulation") {
 		return nil, status.Errorf(codes.InvalidArgument, "tickets cannot be created with create time set")
 	}
 
@@ -71,8 +74,13 @@ func doCreateTicket(ctx context.Context, req *pb.CreateTicketRequest, store stat
 		return nil, status.Error(codes.Internal, "failed to clone input ticket proto")
 	}
 
-	ticket.Id = xid.New().String()
-	ticket.CreateTime = timestamppb.Now()
+	if ticket.Id == "" {
+		ticket.Id = xid.New().String()
+	}
+
+	if ticket.CreateTime == nil {
+		ticket.CreateTime = timestamppb.Now()
+	}
 
 	sfCount := 0
 	sfCount += len(ticket.GetSearchFields().GetDoubleArgs())

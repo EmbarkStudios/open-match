@@ -61,6 +61,7 @@ frontend: &frontend
   grpcPort: 50504
   httpPort: 51504
   portType: ClusterIP
+  isSimulation: false
   replicas: 3
   image: openmatch-frontend
 backend: &backend

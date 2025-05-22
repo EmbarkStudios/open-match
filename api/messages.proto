@@ -45,8 +45,8 @@ message Ticket {
   // Optional, depending on the requirements of the connected systems.
   map<string, google.protobuf.Any> extensions = 5;
 
-  // Customized information not inspected by Open Match, to be kept persistent 
-  // throughout the life-cycle of a ticket. 
+  // Customized information not inspected by Open Match, to be kept persistent
+  // throughout the life-cycle of a ticket.
   // Optional, depending on the requirements of the connected systems.
   map<string, google.protobuf.Any> persistent_field = 6;
 
@@ -231,7 +231,7 @@ message Match {
   // to possible change or removal.
   Backfill backfill = 8;
 
-  // AllocateGameServer signalise Director that Backfill is new and it should 
+  // AllocateGameServer signalise Director that Backfill is new and it should
   // allocate a GameServer, this Backfill would be assigned.
   // BETA FEATURE WARNING: This field is not finalized and still subject
   // to possible change or removal.
@@ -242,7 +242,7 @@ message Match {
 }
 
 // Represents a backfill entity which is used to fill partially full matches.
-// 
+//
 // BETA FEATURE WARNING:  This call and the associated Request and Response
 // messages are not finalized and still subject to possible change or removal.
 message Backfill {
@@ -258,8 +258,8 @@ message Backfill {
   // Optional, depending on the requirements of the connected systems.
   map<string, google.protobuf.Any> extensions = 3;
 
-  // Customized information not inspected by Open Match, to be kept persistent 
-  // throughout the life-cycle of a backfill. 
+  // Customized information not inspected by Open Match, to be kept persistent
+  // throughout the life-cycle of a backfill.
   // Optional, depending on the requirements of the connected systems.
   map<string, google.protobuf.Any> persistent_field = 4;
 
@@ -271,4 +271,7 @@ message Backfill {
   // Prevents the MMF from overriding a newer version from the game server.
   // Do NOT read or write to this field, it is for internal tracking, and changing the value will cause bugs.
   int64 generation = 6;
+
+  // Ticket Ids associated with this backfill.
+  repeated string ticket_ids = 7;
 }

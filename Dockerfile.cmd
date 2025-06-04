@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM open-match-base-build as builder
+FROM open-match-base-build AS builder
 
 WORKDIR /go/src/open-match.dev/open-match
 
@@ -38,7 +38,7 @@ ARG BUILD_VERSION
 # Standardized Docker Image Labels
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL \
-    org.opencontainers.image.created="${BUILD_TIME}" \
+    org.opencontainers.image.created=$BUILD_DATE \
     org.opencontainers.image.authors="Google LLC <open-match-discuss@googlegroups.com>" \
     org.opencontainers.image.url="https://open-match.dev/" \
     org.opencontainers.image.documentation="https://open-match.dev/site/docs/" \

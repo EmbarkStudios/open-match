@@ -386,6 +386,9 @@ func (s *frontendService) AcknowledgeBackfill(ctx context.Context, req *pb.Ackno
 
 // GetBackfill fetches a Backfill object by its ID.
 func (s *frontendService) GetBackfill(ctx context.Context, req *pb.GetBackfillRequest) (*pb.Backfill, error) {
-	bf, _, err := s.store.GetBackfill(ctx, req.GetBackfillId())
+	bf, associatedTickets, err := s.store.GetBackfill(ctx, req.GetBackfillId())
+	if bf != nil && len(associatedTickets) != 0 {
+		bf.TicketIds = associatedTickets
+	}
 	return bf, err
 }

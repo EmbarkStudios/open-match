@@ -15,7 +15,9 @@ module open-match.dev/open-match
 // limitations under the License.
 
 // When updating Go version, update Dockerfile.ci, Dockerfile.base-build, and go.mod
-go 1.21
+go 1.23.0
+
+toolchain go1.23.9
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.7.0
@@ -127,4 +129,11 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
+)
+
+replace (
+	google.golang.org/api v0.0.0 => google.golang.org/api v0.155.0 // lowest non breaking version fixing grpc dial options
+	k8s.io/api v0.0.0 => k8s.io/api v0.28.0 // kubernetes-1.14.10
+	k8s.io/apimachinery v0.0.0 => k8s.io/apimachinery v0.28.0
+	k8s.io/client-go v0.0.0 => k8s.io/client-go v0.28.0
 )

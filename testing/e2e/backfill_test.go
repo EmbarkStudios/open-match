@@ -672,6 +672,66 @@ func TestBackfillSkipExpiredError(t *testing.T) {
 	require.Equal(t, io.EOF.Error(), err.Error())
 }
 
+// TestGetBackfillTickets checks that tickets got assigned
+// to the same Connection as it is provided in AcknowledgeBackfill request
+func TestGetBackfillTickets(t *testing.T) {
+	om := newOM(t)
+	ctx := context.Background()
+
+	bf := &pb.Backfill{SearchFields: &pb.SearchFields{
+		StringArgs: map[string]string{
+			"search": "me",
+		},
+	}}
+	createdBf, err := om.Frontend().CreateBackfill(ctx, &pb.CreateBackfillRequest{Backfill: bf})
+	require.NoError(t, err)
+	require.Equal(t, int64(1), createdBf.Generation)
+
+	ticketIDs := createMatchWithBackfill(ctx, om, createdBf, t)
+
+	// When
+	backfillTickets, err := om.Frontend().GetBackfillTickets(ctx, &pb.GetBackfillRequest{
+		BackfillId: createdBf.GetId(),
+	})
+
+	// Then
+	require.NoError(t, err)
+	require.Len(t, backfillTickets.Tickets, len(ticketIDs))
+
+	// And
+	conn := "127.0.0.1:4242"
+	getResp, err := om.Frontend().AcknowledgeBackfill(ctx, &pb.AcknowledgeBackfillRequest{
+		BackfillId: createdBf.Id,
+		Assignment: &pb.Assignment{
+			Connection: conn,
+			Extensions: map[string]*anypb.Any{
+				"evaluation_input": mustAny(&pb.DefaultEvaluationCriteria{
+					Score: 10,
+				}),
+			},
+		},
+	})
+	require.NotNil(t, getResp)
+	require.NotNil(t, getResp.Backfill)
+	require.NotNil(t, getResp.Tickets)
+	require.Equal(t, len(ticketIDs), len(getResp.Tickets))
+	require.NoError(t, err)
+
+	respTicketIds := make([]string, len(getResp.Tickets))
+
+	for _, rt := range getResp.Tickets {
+		respTicketIds = append(respTicketIds, rt.Id)
+	}
+
+	for _, v := range ticketIDs {
+		ticket, err := om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: v})
+		require.NoError(t, err)
+		require.Contains(t, respTicketIds, ticket.Id)
+		require.NotNil(t, ticket.Assignment)
+		require.Equal(t, conn, ticket.Assignment.Connection)
+	}
+}
+
 func mustAny(m proto.Message) *anypb.Any {
 	result, err := anypb.New(m)
 	if err != nil {

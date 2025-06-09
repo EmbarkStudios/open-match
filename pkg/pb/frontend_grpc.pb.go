@@ -43,6 +43,7 @@ const (
 	FrontendService_DeleteBackfill_FullMethodName      = "/openmatch.FrontendService/DeleteBackfill"
 	FrontendService_GetBackfill_FullMethodName         = "/openmatch.FrontendService/GetBackfill"
 	FrontendService_UpdateBackfill_FullMethodName      = "/openmatch.FrontendService/UpdateBackfill"
+	FrontendService_GetBackfillTickets_FullMethodName  = "/openmatch.FrontendService/GetBackfillTickets"
 )
 
 // FrontendServiceClient is the client API for FrontendService service.
@@ -87,6 +88,10 @@ type FrontendServiceClient interface {
 	// BETA FEATURE WARNING:  This call and the associated Request and Response
 	// messages are not finalized and still subject to possible change or removal.
 	UpdateBackfill(ctx context.Context, in *UpdateBackfillRequest, opts ...grpc.CallOption) (*Backfill, error)
+	// GetBackfillTickets returns tickets associated with a backfill by its ID.
+	// Successfully calling this method guarantees no other updates will happen to
+	// this backfill while this call is in progress
+	GetBackfillTickets(ctx context.Context, in *GetBackfillRequest, opts ...grpc.CallOption) (*BackfillTickets, error)
 }
 
 type frontendServiceClient struct {
@@ -196,6 +201,16 @@ func (c *frontendServiceClient) UpdateBackfill(ctx context.Context, in *UpdateBa
 	return out, nil
 }
 
+func (c *frontendServiceClient) GetBackfillTickets(ctx context.Context, in *GetBackfillRequest, opts ...grpc.CallOption) (*BackfillTickets, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BackfillTickets)
+	err := c.cc.Invoke(ctx, FrontendService_GetBackfillTickets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FrontendServiceServer is the server API for FrontendService service.
 // All implementations should embed UnimplementedFrontendServiceServer
 // for forward compatibility.
@@ -238,6 +253,10 @@ type FrontendServiceServer interface {
 	// BETA FEATURE WARNING:  This call and the associated Request and Response
 	// messages are not finalized and still subject to possible change or removal.
 	UpdateBackfill(context.Context, *UpdateBackfillRequest) (*Backfill, error)
+	// GetBackfillTickets returns tickets associated with a backfill by its ID.
+	// Successfully calling this method guarantees no other updates will happen to
+	// this backfill while this call is in progress
+	GetBackfillTickets(context.Context, *GetBackfillRequest) (*BackfillTickets, error)
 }
 
 // UnimplementedFrontendServiceServer should be embedded to have
@@ -273,6 +292,9 @@ func (UnimplementedFrontendServiceServer) GetBackfill(context.Context, *GetBackf
 }
 func (UnimplementedFrontendServiceServer) UpdateBackfill(context.Context, *UpdateBackfillRequest) (*Backfill, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateBackfill not implemented")
+}
+func (UnimplementedFrontendServiceServer) GetBackfillTickets(context.Context, *GetBackfillRequest) (*BackfillTickets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBackfillTickets not implemented")
 }
 func (UnimplementedFrontendServiceServer) testEmbeddedByValue() {}
 
@@ -449,6 +471,24 @@ func _FrontendService_UpdateBackfill_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FrontendService_GetBackfillTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBackfillRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FrontendServiceServer).GetBackfillTickets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FrontendService_GetBackfillTickets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FrontendServiceServer).GetBackfillTickets(ctx, req.(*GetBackfillRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FrontendService_ServiceDesc is the grpc.ServiceDesc for FrontendService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -487,6 +527,10 @@ var FrontendService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateBackfill",
 			Handler:    _FrontendService_UpdateBackfill_Handler,
+		},
+		{
+			MethodName: "GetBackfillTickets",
+			Handler:    _FrontendService_GetBackfillTickets_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

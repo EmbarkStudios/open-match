@@ -233,6 +233,45 @@
         ]
       }
     },
+    "/v1/frontendservice/backfills/{backfill_id}/tickets": {
+      "get": {
+        "summary": "GetBackfillTickets returns tickets associated with a backfill by its ID.\nSuccessfully calling this method guarantees no other updates will happen to\nthis backfill while this call is in progress",
+        "operationId": "FrontendService_GetBackfillTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/openmatchBackfillTickets"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "backfill_id",
+            "description": "An existing ID of Backfill to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FrontendService"
+        ]
+      }
+    },
     "/v1/frontendservice/tickets": {
       "post": {
         "summary": "CreateTicket assigns an unique TicketId to the input Ticket and record it in state storage.\nA ticket is considered as ready for matchmaking once it is created.\n  - If a TicketId exists in a Ticket request, an auto-generated TicketId will override this field.\n  - If SearchFields exist in a Ticket, CreateTicket will also index these fields such that one can query the ticket with query.QueryTickets function.",
@@ -482,6 +521,24 @@
         }
       },
       "description": "Represents a backfill entity which is used to fill partially full matches.\n\nBETA FEATURE WARNING:  This call and the associated Request and Response\nmessages are not finalized and still subject to possible change or removal."
+    },
+    "openmatchBackfillTickets": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Id represents an auto-generated Id issued by Open Match."
+        },
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/openmatchTicket"
+          },
+          "description": "Tickets associated with this backfill."
+        }
+      },
+      "description": "Represents a backfill entity and optionally its associated tickets if any."
     },
     "openmatchCreateBackfillRequest": {
       "type": "object",

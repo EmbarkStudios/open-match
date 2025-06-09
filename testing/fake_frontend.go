@@ -28,6 +28,10 @@ import (
 type FakeFrontend struct {
 }
 
+func (s *FakeFrontend) GetBackfillTickets(ctx context.Context, request *pb.GetBackfillRequest) (*pb.BackfillTickets, error) {
+	return &pb.BackfillTickets{}, nil
+}
+
 // CreateTicket will create a new ticket, assign a Ticket id to it and put the
 // Ticket in state storage. It will then look through the 'properties' field
 // for the attributes defined as indices the matchmakaking config. If the

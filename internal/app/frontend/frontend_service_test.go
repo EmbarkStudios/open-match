@@ -646,3 +646,63 @@ func TestDoDeleteBackfill(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBackfillTickets(t *testing.T) {
+	fakeBackfillTickets := &pb.BackfillTickets{
+		Id:      "backfillId",
+		Tickets: []*pb.Ticket{{Id: "ticketId"}},
+	}
+
+	cfg := viper.New()
+	tests := []struct {
+		description  string
+		preAction    func(context.Context, context.CancelFunc, statestore.Service)
+		wantResponse *pb.BackfillTickets
+		wantCode     codes.Code
+	}{
+		{
+			description: "expect unavailable code since context is canceled before being called",
+			preAction: func(_ context.Context, cancel context.CancelFunc, _ statestore.Service) {
+				cancel()
+			},
+			wantCode: codes.Unavailable,
+		},
+		{
+			description: "expect not found code since ticket does not exist",
+			preAction:   func(_ context.Context, _ context.CancelFunc, _ statestore.Service) {},
+			wantCode:    codes.NotFound,
+		},
+		{
+			description: "expect ok code with output ticket equivalent to fakeBackfill",
+			preAction: func(ctx context.Context, _ context.CancelFunc, store statestore.Service) {
+				require.NoError(t, store.CreateTicket(ctx, &pb.Ticket{Id: "ticketId"}))
+				require.NoError(t, store.CreateBackfill(ctx, &pb.Backfill{
+					Id: "backfillId",
+				}, []string{"ticketId"}))
+			},
+			wantCode:     codes.OK,
+			wantResponse: fakeBackfillTickets,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.description, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(utilTesting.NewContext(t))
+			store, closer := statestoreTesting.NewStoreServiceForTesting(t, viper.New())
+			defer closer()
+			fs := frontendService{cfg: cfg, store: store}
+
+			test.preAction(ctx, cancel, store)
+
+			backfillTickets, err := fs.GetBackfillTickets(ctx, &pb.GetBackfillRequest{BackfillId: fakeBackfillTickets.GetId()})
+			require.Equal(t, test.wantCode.String(), status.Convert(err).Code().String())
+
+			if err == nil {
+				require.Equal(t, test.wantResponse.GetId(), backfillTickets.GetId())
+				require.Len(t, backfillTickets.GetTickets(), 1)
+				require.Equal(t, test.wantResponse.GetTickets()[0].GetId(), backfillTickets.GetTickets()[0].GetId())
+			}
+		})
+	}
+}

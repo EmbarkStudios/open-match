@@ -219,4 +219,13 @@ service FrontendService {
       body: "*"
     };
   }
+
+  // GetBackfillTickets returns tickets associated with a backfill by its ID.
+  // Successfully calling this method guarantees no other updates will happen to
+  // this backfill while this call is in progress
+  rpc GetBackfillTickets(GetBackfillRequest) returns (BackfillTickets) {
+    option (google.api.http) = {
+      get: "/v1/frontendservice/backfills/{backfill_id}/tickets"
+    };
+  }
 }

@@ -272,3 +272,12 @@ message Backfill {
   // Do NOT read or write to this field, it is for internal tracking, and changing the value will cause bugs.
   int64 generation = 6;
 }
+
+// Represents a backfill entity and optionally its associated tickets if any.
+message BackfillTickets {
+  // Id represents an auto-generated Id issued by Open Match.
+  string id = 1;
+
+  // Tickets associated with this backfill.
+  repeated Ticket tickets = 2;
+}

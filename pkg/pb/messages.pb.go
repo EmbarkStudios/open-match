@@ -912,6 +912,61 @@ func (x *Backfill) GetGeneration() int64 {
 	return 0
 }
 
+// Represents a backfill entity and optionally its associated tickets if any.
+type BackfillTickets struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Id represents an auto-generated Backfill Id issued by Open Match.
+	BackfillId string `protobuf:"bytes,1,opt,name=backfill_id,json=backfillId,proto3" json:"backfill_id,omitempty"`
+	// Tickets associated with this backfill.
+	Tickets       []*Ticket `protobuf:"bytes,2,rep,name=tickets,proto3" json:"tickets,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BackfillTickets) Reset() {
+	*x = BackfillTickets{}
+	mi := &file_api_messages_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BackfillTickets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BackfillTickets) ProtoMessage() {}
+
+func (x *BackfillTickets) ProtoReflect() protoreflect.Message {
+	mi := &file_api_messages_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BackfillTickets.ProtoReflect.Descriptor instead.
+func (*BackfillTickets) Descriptor() ([]byte, []int) {
+	return file_api_messages_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *BackfillTickets) GetBackfillId() string {
+	if x != nil {
+		return x.BackfillId
+	}
+	return ""
+}
+
+func (x *BackfillTickets) GetTickets() []*Ticket {
+	if x != nil {
+		return x.Tickets
+	}
+	return nil
+}
+
 var File_api_messages_proto protoreflect.FileDescriptor
 
 const file_api_messages_proto_rawDesc = "" +
@@ -1021,7 +1076,11 @@ const file_api_messages_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\x1aX\n" +
 	"\x14PersistentFieldEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01B.Z open-match.dev/open-match/pkg/pb\xaa\x02\tOpenMatchb\x06proto3"
+	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\"_\n" +
+	"\x0fBackfillTickets\x12\x1f\n" +
+	"\vbackfill_id\x18\x01 \x01(\tR\n" +
+	"backfillId\x12+\n" +
+	"\atickets\x18\x02 \x03(\v2\x11.openmatch.TicketR\aticketsB.Z open-match.dev/open-match/pkg/pb\xaa\x02\tOpenMatchb\x06proto3"
 
 var (
 	file_api_messages_proto_rawDescOnce sync.Once
@@ -1036,7 +1095,7 @@ func file_api_messages_proto_rawDescGZIP() []byte {
 }
 
 var file_api_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_api_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_api_messages_proto_goTypes = []any{
 	(DoubleRangeFilter_Exclude)(0), // 0: openmatch.DoubleRangeFilter.Exclude
 	(*Ticket)(nil),                 // 1: openmatch.Ticket
@@ -1049,54 +1108,56 @@ var file_api_messages_proto_goTypes = []any{
 	(*MatchProfile)(nil),           // 8: openmatch.MatchProfile
 	(*Match)(nil),                  // 9: openmatch.Match
 	(*Backfill)(nil),               // 10: openmatch.Backfill
-	nil,                            // 11: openmatch.Ticket.ExtensionsEntry
-	nil,                            // 12: openmatch.Ticket.PersistentFieldEntry
-	nil,                            // 13: openmatch.SearchFields.DoubleArgsEntry
-	nil,                            // 14: openmatch.SearchFields.StringArgsEntry
-	nil,                            // 15: openmatch.Assignment.ExtensionsEntry
-	nil,                            // 16: openmatch.MatchProfile.ExtensionsEntry
-	nil,                            // 17: openmatch.Match.ExtensionsEntry
-	nil,                            // 18: openmatch.Backfill.ExtensionsEntry
-	nil,                            // 19: openmatch.Backfill.PersistentFieldEntry
-	(*timestamppb.Timestamp)(nil),  // 20: google.protobuf.Timestamp
-	(*anypb.Any)(nil),              // 21: google.protobuf.Any
+	(*BackfillTickets)(nil),        // 11: openmatch.BackfillTickets
+	nil,                            // 12: openmatch.Ticket.ExtensionsEntry
+	nil,                            // 13: openmatch.Ticket.PersistentFieldEntry
+	nil,                            // 14: openmatch.SearchFields.DoubleArgsEntry
+	nil,                            // 15: openmatch.SearchFields.StringArgsEntry
+	nil,                            // 16: openmatch.Assignment.ExtensionsEntry
+	nil,                            // 17: openmatch.MatchProfile.ExtensionsEntry
+	nil,                            // 18: openmatch.Match.ExtensionsEntry
+	nil,                            // 19: openmatch.Backfill.ExtensionsEntry
+	nil,                            // 20: openmatch.Backfill.PersistentFieldEntry
+	(*timestamppb.Timestamp)(nil),  // 21: google.protobuf.Timestamp
+	(*anypb.Any)(nil),              // 22: google.protobuf.Any
 }
 var file_api_messages_proto_depIdxs = []int32{
 	3,  // 0: openmatch.Ticket.assignment:type_name -> openmatch.Assignment
 	2,  // 1: openmatch.Ticket.search_fields:type_name -> openmatch.SearchFields
-	11, // 2: openmatch.Ticket.extensions:type_name -> openmatch.Ticket.ExtensionsEntry
-	12, // 3: openmatch.Ticket.persistent_field:type_name -> openmatch.Ticket.PersistentFieldEntry
-	20, // 4: openmatch.Ticket.create_time:type_name -> google.protobuf.Timestamp
-	13, // 5: openmatch.SearchFields.double_args:type_name -> openmatch.SearchFields.DoubleArgsEntry
-	14, // 6: openmatch.SearchFields.string_args:type_name -> openmatch.SearchFields.StringArgsEntry
-	15, // 7: openmatch.Assignment.extensions:type_name -> openmatch.Assignment.ExtensionsEntry
+	12, // 2: openmatch.Ticket.extensions:type_name -> openmatch.Ticket.ExtensionsEntry
+	13, // 3: openmatch.Ticket.persistent_field:type_name -> openmatch.Ticket.PersistentFieldEntry
+	21, // 4: openmatch.Ticket.create_time:type_name -> google.protobuf.Timestamp
+	14, // 5: openmatch.SearchFields.double_args:type_name -> openmatch.SearchFields.DoubleArgsEntry
+	15, // 6: openmatch.SearchFields.string_args:type_name -> openmatch.SearchFields.StringArgsEntry
+	16, // 7: openmatch.Assignment.extensions:type_name -> openmatch.Assignment.ExtensionsEntry
 	0,  // 8: openmatch.DoubleRangeFilter.exclude:type_name -> openmatch.DoubleRangeFilter.Exclude
 	4,  // 9: openmatch.Pool.double_range_filters:type_name -> openmatch.DoubleRangeFilter
 	5,  // 10: openmatch.Pool.string_equals_filters:type_name -> openmatch.StringEqualsFilter
 	6,  // 11: openmatch.Pool.tag_present_filters:type_name -> openmatch.TagPresentFilter
-	20, // 12: openmatch.Pool.created_before:type_name -> google.protobuf.Timestamp
-	20, // 13: openmatch.Pool.created_after:type_name -> google.protobuf.Timestamp
+	21, // 12: openmatch.Pool.created_before:type_name -> google.protobuf.Timestamp
+	21, // 13: openmatch.Pool.created_after:type_name -> google.protobuf.Timestamp
 	7,  // 14: openmatch.MatchProfile.pools:type_name -> openmatch.Pool
-	16, // 15: openmatch.MatchProfile.extensions:type_name -> openmatch.MatchProfile.ExtensionsEntry
+	17, // 15: openmatch.MatchProfile.extensions:type_name -> openmatch.MatchProfile.ExtensionsEntry
 	1,  // 16: openmatch.Match.tickets:type_name -> openmatch.Ticket
-	17, // 17: openmatch.Match.extensions:type_name -> openmatch.Match.ExtensionsEntry
+	18, // 17: openmatch.Match.extensions:type_name -> openmatch.Match.ExtensionsEntry
 	10, // 18: openmatch.Match.backfill:type_name -> openmatch.Backfill
 	2,  // 19: openmatch.Backfill.search_fields:type_name -> openmatch.SearchFields
-	18, // 20: openmatch.Backfill.extensions:type_name -> openmatch.Backfill.ExtensionsEntry
-	19, // 21: openmatch.Backfill.persistent_field:type_name -> openmatch.Backfill.PersistentFieldEntry
-	20, // 22: openmatch.Backfill.create_time:type_name -> google.protobuf.Timestamp
-	21, // 23: openmatch.Ticket.ExtensionsEntry.value:type_name -> google.protobuf.Any
-	21, // 24: openmatch.Ticket.PersistentFieldEntry.value:type_name -> google.protobuf.Any
-	21, // 25: openmatch.Assignment.ExtensionsEntry.value:type_name -> google.protobuf.Any
-	21, // 26: openmatch.MatchProfile.ExtensionsEntry.value:type_name -> google.protobuf.Any
-	21, // 27: openmatch.Match.ExtensionsEntry.value:type_name -> google.protobuf.Any
-	21, // 28: openmatch.Backfill.ExtensionsEntry.value:type_name -> google.protobuf.Any
-	21, // 29: openmatch.Backfill.PersistentFieldEntry.value:type_name -> google.protobuf.Any
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	19, // 20: openmatch.Backfill.extensions:type_name -> openmatch.Backfill.ExtensionsEntry
+	20, // 21: openmatch.Backfill.persistent_field:type_name -> openmatch.Backfill.PersistentFieldEntry
+	21, // 22: openmatch.Backfill.create_time:type_name -> google.protobuf.Timestamp
+	1,  // 23: openmatch.BackfillTickets.tickets:type_name -> openmatch.Ticket
+	22, // 24: openmatch.Ticket.ExtensionsEntry.value:type_name -> google.protobuf.Any
+	22, // 25: openmatch.Ticket.PersistentFieldEntry.value:type_name -> google.protobuf.Any
+	22, // 26: openmatch.Assignment.ExtensionsEntry.value:type_name -> google.protobuf.Any
+	22, // 27: openmatch.MatchProfile.ExtensionsEntry.value:type_name -> google.protobuf.Any
+	22, // 28: openmatch.Match.ExtensionsEntry.value:type_name -> google.protobuf.Any
+	22, // 29: openmatch.Backfill.ExtensionsEntry.value:type_name -> google.protobuf.Any
+	22, // 30: openmatch.Backfill.PersistentFieldEntry.value:type_name -> google.protobuf.Any
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_api_messages_proto_init() }
@@ -1110,7 +1171,7 @@ func file_api_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_messages_proto_rawDesc), len(file_api_messages_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

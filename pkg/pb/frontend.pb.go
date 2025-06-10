@@ -600,7 +600,8 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\vbackfill_id\x18\x01 \x01(\tR\n" +
 	"backfillId\"H\n" +
 	"\x15UpdateBackfillRequest\x12/\n" +
-	"\bbackfill\x18\x01 \x01(\v2\x13.openmatch.BackfillR\bbackfill2\x8a\t\n" +
+	"\bbackfill\x18\x01 \x01(\v2\x13.openmatch.BackfillR\bbackfill2\x99\n" +
+	"\n" +
 	"\x0fFrontendService\x12i\n" +
 	"\fCreateTicket\x12\x1e.openmatch.CreateTicketRequest\x1a\x11.openmatch.Ticket\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/frontendservice/tickets\x12w\n" +
 	"\fDeleteTicket\x12\x1e.openmatch.DeleteTicketRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02)*'/v1/frontendservice/tickets/{ticket_id}\x12l\n" +
@@ -610,7 +611,8 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\x0eCreateBackfill\x12 .openmatch.CreateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/frontendservice/backfills\x12\x7f\n" +
 	"\x0eDeleteBackfill\x12 .openmatch.DeleteBackfillRequest\x1a\x16.google.protobuf.Empty\"3\x82\xd3\xe4\x93\x02-*+/v1/frontendservice/backfills/{backfill_id}\x12v\n" +
 	"\vGetBackfill\x12\x1d.openmatch.GetBackfillRequest\x1a\x13.openmatch.Backfill\"3\x82\xd3\xe4\x93\x02-\x12+/v1/frontendservice/backfills/{backfill_id}\x12q\n" +
-	"\x0eUpdateBackfill\x12 .openmatch.UpdateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/frontendservice/backfillsB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
+	"\x0eUpdateBackfill\x12 .openmatch.UpdateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/frontendservice/backfills\x12\x8c\x01\n" +
+	"\x12GetBackfillTickets\x12\x1d.openmatch.GetBackfillRequest\x1a\x1a.openmatch.BackfillTickets\";\x82\xd3\xe4\x93\x025\x123/v1/frontendservice/backfills/{backfill_id}/ticketsB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
 	"\bFrontend\"I\n" +
 	"\n" +
 	"Open Match\x12\x16https://open-match.dev\x1a#open-match-discuss@googlegroups.com*V\n" +
@@ -649,6 +651,7 @@ var file_api_frontend_proto_goTypes = []any{
 	(*Assignment)(nil),                  // 12: openmatch.Assignment
 	(*Backfill)(nil),                    // 13: openmatch.Backfill
 	(*emptypb.Empty)(nil),               // 14: google.protobuf.Empty
+	(*BackfillTickets)(nil),             // 15: openmatch.BackfillTickets
 }
 var file_api_frontend_proto_depIdxs = []int32{
 	11, // 0: openmatch.CreateTicketRequest.ticket:type_name -> openmatch.Ticket
@@ -667,17 +670,19 @@ var file_api_frontend_proto_depIdxs = []int32{
 	8,  // 13: openmatch.FrontendService.DeleteBackfill:input_type -> openmatch.DeleteBackfillRequest
 	9,  // 14: openmatch.FrontendService.GetBackfill:input_type -> openmatch.GetBackfillRequest
 	10, // 15: openmatch.FrontendService.UpdateBackfill:input_type -> openmatch.UpdateBackfillRequest
-	11, // 16: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
-	14, // 17: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
-	11, // 18: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
-	4,  // 19: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
-	6,  // 20: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
-	13, // 21: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
-	14, // 22: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
-	13, // 23: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
-	13, // 24: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
-	16, // [16:25] is the sub-list for method output_type
-	7,  // [7:16] is the sub-list for method input_type
+	9,  // 16: openmatch.FrontendService.GetBackfillTickets:input_type -> openmatch.GetBackfillRequest
+	11, // 17: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
+	14, // 18: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
+	11, // 19: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
+	4,  // 20: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
+	6,  // 21: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
+	13, // 22: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
+	14, // 23: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
+	13, // 24: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
+	13, // 25: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
+	15, // 26: openmatch.FrontendService.GetBackfillTickets:output_type -> openmatch.BackfillTickets
+	17, // [17:27] is the sub-list for method output_type
+	7,  // [7:17] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name

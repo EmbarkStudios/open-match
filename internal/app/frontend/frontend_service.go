@@ -389,3 +389,41 @@ func (s *frontendService) GetBackfill(ctx context.Context, req *pb.GetBackfillRe
 	bf, _, err := s.store.GetBackfill(ctx, req.GetBackfillId())
 	return bf, err
 }
+
+// GetBackfillTickets returns tickets associated with a backfill by its ID.
+// Successfully calling this method guarantees no other updates will happen to
+// this backfill while this call is in progress
+func (s *frontendService) GetBackfillTickets(ctx context.Context, req *pb.GetBackfillRequest) (*pb.BackfillTickets, error) {
+	m := s.store.NewMutex(req.GetBackfillId())
+
+	err := m.Lock(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, err.Error())
+	}
+	defer func() {
+		if _, err = m.Unlock(context.Background()); err != nil {
+			logger.WithError(err).Error("error on mutex unlock")
+		}
+	}()
+
+	bf, associatedTicketIds, err := s.store.GetBackfill(ctx, req.GetBackfillId())
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.BackfillTickets{
+		BackfillId: bf.GetId(),
+		Tickets:    make([]*pb.Ticket, 0),
+	}
+
+	if len(associatedTicketIds) != 0 {
+		tickets, err := s.store.GetTickets(ctx, associatedTicketIds)
+		if err != nil {
+			return nil, err
+		}
+
+		resp.Tickets = tickets
+	}
+
+	return resp, nil
+}

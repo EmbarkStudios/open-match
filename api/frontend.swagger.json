@@ -525,9 +525,9 @@
     "openmatchBackfillTickets": {
       "type": "object",
       "properties": {
-        "id": {
+        "backfill_id": {
           "type": "string",
-          "description": "Id represents an auto-generated Id issued by Open Match."
+          "description": "Id represents an auto-generated Backfill Id issued by Open Match."
         },
         "tickets": {
           "type": "array",

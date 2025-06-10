@@ -915,8 +915,8 @@ func (x *Backfill) GetGeneration() int64 {
 // Represents a backfill entity and optionally its associated tickets if any.
 type BackfillTickets struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id represents an auto-generated Id issued by Open Match.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Id represents an auto-generated Backfill Id issued by Open Match.
+	BackfillId string `protobuf:"bytes,1,opt,name=backfill_id,json=backfillId,proto3" json:"backfill_id,omitempty"`
 	// Tickets associated with this backfill.
 	Tickets       []*Ticket `protobuf:"bytes,2,rep,name=tickets,proto3" json:"tickets,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -953,9 +953,9 @@ func (*BackfillTickets) Descriptor() ([]byte, []int) {
 	return file_api_messages_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *BackfillTickets) GetId() string {
+func (x *BackfillTickets) GetBackfillId() string {
 	if x != nil {
-		return x.Id
+		return x.BackfillId
 	}
 	return ""
 }
@@ -1076,9 +1076,10 @@ const file_api_messages_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\x1aX\n" +
 	"\x14PersistentFieldEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\"N\n" +
-	"\x0fBackfillTickets\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
+	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\"_\n" +
+	"\x0fBackfillTickets\x12\x1f\n" +
+	"\vbackfill_id\x18\x01 \x01(\tR\n" +
+	"backfillId\x12+\n" +
 	"\atickets\x18\x02 \x03(\v2\x11.openmatch.TicketR\aticketsB.Z open-match.dev/open-match/pkg/pb\xaa\x02\tOpenMatchb\x06proto3"
 
 var (

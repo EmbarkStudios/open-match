@@ -275,8 +275,8 @@ message Backfill {
 
 // Represents a backfill entity and optionally its associated tickets if any.
 message BackfillTickets {
-  // Id represents an auto-generated Id issued by Open Match.
-  string id = 1;
+  // Id represents an auto-generated Backfill Id issued by Open Match.
+  string backfill_id  = 1;
 
   // Tickets associated with this backfill.
   repeated Ticket tickets = 2;

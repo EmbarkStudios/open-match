@@ -649,8 +649,8 @@ func TestDoDeleteBackfill(t *testing.T) {
 
 func TestGetBackfillTickets(t *testing.T) {
 	fakeBackfillTickets := &pb.BackfillTickets{
-		Id:      "backfillId",
-		Tickets: []*pb.Ticket{{Id: "ticketId"}},
+		BackfillId: "backfillId",
+		Tickets:    []*pb.Ticket{{Id: "ticketId"}},
 	}
 
 	cfg := viper.New()
@@ -695,11 +695,11 @@ func TestGetBackfillTickets(t *testing.T) {
 
 			test.preAction(ctx, cancel, store)
 
-			backfillTickets, err := fs.GetBackfillTickets(ctx, &pb.GetBackfillRequest{BackfillId: fakeBackfillTickets.GetId()})
+			backfillTickets, err := fs.GetBackfillTickets(ctx, &pb.GetBackfillRequest{BackfillId: fakeBackfillTickets.GetBackfillId()})
 			require.Equal(t, test.wantCode.String(), status.Convert(err).Code().String())
 
 			if err == nil {
-				require.Equal(t, test.wantResponse.GetId(), backfillTickets.GetId())
+				require.Equal(t, test.wantResponse.GetBackfillId(), backfillTickets.GetBackfillId())
 				require.Len(t, backfillTickets.GetTickets(), 1)
 				require.Equal(t, test.wantResponse.GetTickets()[0].GetId(), backfillTickets.GetTickets()[0].GetId())
 			}

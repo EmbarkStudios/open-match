@@ -412,8 +412,8 @@ func (s *frontendService) GetBackfillTickets(ctx context.Context, req *pb.GetBac
 	}
 
 	resp := &pb.BackfillTickets{
-		Id:      bf.GetId(),
-		Tickets: make([]*pb.Ticket, 0),
+		BackfillId: bf.GetId(),
+		Tickets:    make([]*pb.Ticket, 0),
 	}
 
 	if len(associatedTicketIds) != 0 {

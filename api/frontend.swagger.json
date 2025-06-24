@@ -273,6 +273,48 @@
       }
     },
     "/v1/frontendservice/tickets": {
+      "delete": {
+        "summary": "DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.\nThe client should delete the Ticket when finished matchmaking with it.",
+        "operationId": "FrontendService_DeleteTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_ids",
+            "description": "TicketIds of generated Tickets to be deleted.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "FrontendService"
+        ]
+      },
       "post": {
         "summary": "CreateTicket assigns an unique TicketId to the input Ticket and record it in state storage.\nA ticket is considered as ready for matchmaking once it is created.\n  - If a TicketId exists in a Ticket request, an auto-generated TicketId will override this field.\n  - If SearchFields exist in a Ticket, CreateTicket will also index these fields such that one can query the ticket with query.QueryTickets function.",
         "operationId": "FrontendService_CreateTicket",

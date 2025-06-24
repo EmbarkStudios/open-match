@@ -427,3 +427,48 @@ func (s *frontendService) GetBackfillTickets(ctx context.Context, req *pb.GetBac
 
 	return resp, nil
 }
+
+// DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
+// The client must delete the Tickets when finished matchmaking with it.
+//   - If SearchFields exist in a Ticket, DeleteTickets will deindex the fields lazily.
+//
+// Users may still be able to assign/get tickets after calling DeleteTickets on it.
+func (s *frontendService) DeleteTickets(ctx context.Context, req *pb.DeleteTicketsRequest) (*emptypb.Empty, error) {
+	err := doDeleteTickets(ctx, req.GetTicketIds(), s.store)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func doDeleteTickets(ctx context.Context, ids []string, store statestore.Service) error {
+	// Deindex this Ticket to remove it from matchmaking pool.
+	err := store.DeindexTickets(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	//'lazy' ticket delete that should be called after a ticket
+	// has been deindexed.
+	go func() {
+		ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.DeleteTicketsLazy")
+		defer span.End()
+		err := store.DeleteTickets(ctx, ids)
+		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"error": err.Error(),
+				"ids":   ids,
+			}).Error("failed to delete tickets")
+		}
+		err = store.DeleteTicketsFromPendingRelease(ctx, ids)
+		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"error": err.Error(),
+				"ids":   ids,
+			}).Error("failed to delete tickets from pendingRelease")
+		}
+		// TODO: If other redis queues are implemented or we have custom index fields
+		// created by Open Match, those need to be cleaned up here.
+	}()
+	return nil
+}

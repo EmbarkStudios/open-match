@@ -482,6 +482,73 @@ func TestDoDeleteTicket(t *testing.T) {
 	}
 }
 
+func TestDoDeleteTickets(t *testing.T) {
+	fakeTickets := []*pb.Ticket{
+		{
+			Id: "1",
+			SearchFields: &pb.SearchFields{
+				DoubleArgs: map[string]float64{
+					"test-arg": 1,
+				},
+			},
+		},
+		{
+			Id: "2",
+			SearchFields: &pb.SearchFields{
+				DoubleArgs: map[string]float64{
+					"test-arg": 2,
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		description string
+		preAction   func(context.Context, context.CancelFunc, statestore.Service)
+		wantCode    codes.Code
+	}{
+		{
+			description: "expect unavailable code since context is canceled before being called",
+			preAction: func(_ context.Context, cancel context.CancelFunc, _ statestore.Service) {
+				cancel()
+			},
+			wantCode: codes.Unavailable,
+		},
+		{
+			description: "expect ok code since delete ticket does not care about if ticket exists or not",
+			preAction:   func(_ context.Context, _ context.CancelFunc, _ statestore.Service) {},
+			wantCode:    codes.OK,
+		},
+		{
+			description: "expect ok code",
+			preAction: func(ctx context.Context, _ context.CancelFunc, store statestore.Service) {
+				for _, ticket := range fakeTickets {
+					_ = store.CreateTicket(ctx, ticket)
+					_ = store.IndexTicket(ctx, ticket)
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.description, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(utilTesting.NewContext(t))
+			store, closer := statestoreTesting.NewStoreServiceForTesting(t, viper.New())
+			defer closer()
+
+			test.preAction(ctx, cancel, store)
+			ids := make([]string, len(fakeTickets))
+			for i := 0; i < len(fakeTickets); i++ {
+				ids[i] = fakeTickets[i].Id
+			}
+
+			err := doDeleteTickets(ctx, ids, store)
+			require.Equal(t, test.wantCode.String(), status.Convert(err).Code().String())
+		})
+	}
+}
+
 func TestDoGetTicket(t *testing.T) {
 	fakeTicket := &pb.Ticket{
 		Id: "1",

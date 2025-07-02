@@ -53,6 +53,12 @@ func (is *instrumentedService) DeleteTicket(ctx context.Context, id string) erro
 	return is.s.DeleteTicket(ctx, id)
 }
 
+func (is *instrumentedService) DeleteTickets(ctx context.Context, ids []string) error {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.DeleteTickets")
+	defer span.End()
+	return is.s.DeleteTickets(ctx, ids)
+}
+
 func (is *instrumentedService) IndexTicket(ctx context.Context, ticket *pb.Ticket) error {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.IndexTicket")
 	defer span.End()
@@ -63,6 +69,12 @@ func (is *instrumentedService) DeindexTicket(ctx context.Context, id string) err
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.DeindexTicket")
 	defer span.End()
 	return is.s.DeindexTicket(ctx, id)
+}
+
+func (is *instrumentedService) DeindexTickets(ctx context.Context, ids []string) error {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.DeindexTickets")
+	defer span.End()
+	return is.s.DeindexTickets(ctx, ids)
 }
 
 func (is *instrumentedService) GetTickets(ctx context.Context, ids []string) ([]*pb.Ticket, error) {

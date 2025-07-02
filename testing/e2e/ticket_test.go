@@ -668,3 +668,33 @@ func TestWatchAssignments(t *testing.T) {
 		require.Equal(t, "a", a.Connection)
 	}
 }
+
+// TestDeleteTickets deletes zero or more tickets
+func TestDeleteTickets(t *testing.T) {
+	om := newOM(t)
+	ctx := context.Background()
+
+	t1, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: &pb.Ticket{}})
+	require.Nil(t, err)
+
+	t2, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: &pb.Ticket{}})
+	require.Nil(t, err)
+
+	t3, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: &pb.Ticket{}})
+	require.Nil(t, err)
+
+	_, err = om.Frontend().DeleteTickets(ctx, &pb.DeleteTicketsRequest{
+		TicketIds: []string{t1.Id, t2.Id},
+	})
+	require.Nil(t, err)
+
+	get, err := om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: t1.Id})
+	require.Nil(t, get)
+	require.Equal(t, "Ticket id: "+t1.Id+" not found", status.Convert(err).Message())
+	require.Equal(t, codes.NotFound, status.Convert(err).Code())
+
+	get, err = om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: t3.Id})
+	require.NoError(t, err)
+	require.NotNil(t, get)
+	require.Equal(t, t3.Id, get.Id)
+}

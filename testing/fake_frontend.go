@@ -28,6 +28,10 @@ import (
 type FakeFrontend struct {
 }
 
+func (s *FakeFrontend) DeleteTickets(ctx context.Context, request *pb.DeleteTicketsRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
 func (s *FakeFrontend) GetBackfillTickets(ctx context.Context, request *pb.GetBackfillRequest) (*pb.BackfillTickets, error) {
 	return &pb.BackfillTickets{}, nil
 }

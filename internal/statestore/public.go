@@ -43,11 +43,18 @@ type Service interface {
 	// This method succeeds if the Ticket does not exist.
 	DeleteTicket(ctx context.Context, id string) error
 
+	// DeleteTickets removes the Tickets with the specified id from state storage.
+	// This method succeeds if any of the Tickets do not exist.
+	DeleteTickets(ctx context.Context, ids []string) error
+
 	// IndexTicket adds the ticket to the index.
 	IndexTicket(ctx context.Context, ticket *pb.Ticket) error
 
 	// DeindexTicket removes specified ticket from the index. The Ticket continues to exist.
 	DeindexTicket(ctx context.Context, id string) error
+
+	// DeindexTickets removes specified tickets from the index. The Tickets continue to exist.
+	DeindexTickets(ctx context.Context, ids []string) error
 
 	// GetIndexedIDSet returns the ids of all tickets currently indexed.
 	GetIndexedIDSet(ctx context.Context) (map[string]struct{}, error)

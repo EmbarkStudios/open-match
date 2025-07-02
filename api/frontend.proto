@@ -123,7 +123,7 @@ message GetBackfillRequest {
 }
 
 // UpdateBackfillRequest - update searchFields, extensions and set assignment.
-// 
+//
 // BETA FEATURE WARNING: This Request message is not finalized and still subject
 // to possible change or removal.
 message UpdateBackfillRequest {
@@ -131,6 +131,10 @@ message UpdateBackfillRequest {
   Backfill backfill = 1;
 }
 
+message DeleteTicketsRequest {
+  // TicketIds of generated Tickets to be deleted.
+  repeated string ticket_ids = 1;
+}
 
 // The FrontendService implements APIs to manage and query status of a Tickets.
 service FrontendService {
@@ -146,7 +150,7 @@ service FrontendService {
   }
 
   // DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.
-  // The client should delete the Ticket when finished matchmaking with it. 
+  // The client should delete the Ticket when finished matchmaking with it.
   rpc DeleteTicket(DeleteTicketRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       delete: "/v1/frontendservice/tickets/{ticket_id}"
@@ -161,7 +165,7 @@ service FrontendService {
   }
 
   // WatchAssignments stream back Assignment of the specified TicketId if it is updated.
-  //   - If the Assignment is not updated, GetAssignment will retry using the configured backoff strategy. 
+  //   - If the Assignment is not updated, GetAssignment will retry using the configured backoff strategy.
   rpc WatchAssignments(WatchAssignmentsRequest)
       returns (stream WatchAssignmentsResponse) {
     option (google.api.http) = {
@@ -208,7 +212,7 @@ service FrontendService {
       get: "/v1/frontendservice/backfills/{backfill_id}"
     };
   }
-  
+
   // UpdateBackfill updates search_fields and extensions for the backfill with the provided id.
   // Any tickets waiting for this backfill will be returned to the active pool, no longer pending.
   // BETA FEATURE WARNING:  This call and the associated Request and Response
@@ -226,6 +230,14 @@ service FrontendService {
   rpc GetBackfillTickets(GetBackfillRequest) returns (BackfillTickets) {
     option (google.api.http) = {
       get: "/v1/frontendservice/backfills/{backfill_id}/tickets"
+    };
+  }
+
+  // DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
+  // The client should delete the Tickets when finished matchmaking with them.
+  rpc DeleteTickets(DeleteTicketsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/frontendservice/tickets"
     };
   }
 }

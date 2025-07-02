@@ -118,6 +118,32 @@ func (rb *redisBackend) DeleteTicket(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteTickets removes the Tickets with the specified id from state storage.
+func (rb *redisBackend) DeleteTickets(ctx context.Context, ids []string) error {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "DeleteTickets, id: %v, failed to connect to redis: %v", ids, err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+
+	value, err := redis.Int(redisConn.Do("DEL", args...))
+	if err != nil {
+		err = errors.Wrapf(err, "failed to delete tickets from state storage, ids: %v", ids)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	if value == 0 {
+		return status.Errorf(codes.NotFound, "Ticket ids: %s not found", ids)
+	}
+
+	return nil
+}
+
 // IndexTicket indexes the Ticket id for the configured index fields.
 func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) error {
 	redisConn, err := rb.redisPool.GetContext(ctx)
@@ -146,6 +172,29 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 	err = redisConn.Send("SREM", allTickets, id)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %s", id)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	return nil
+}
+
+// DeindexTickets removes the indexing for the specified Tickets. Only the indexes are removed but Tickets continues to exist.
+func (rb *redisBackend) DeindexTickets(ctx context.Context, ids []string) error {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "DeindexTickets, id: %v, failed to connect to redis: %v", ids, err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	args := make([]any, len(ids)+1)
+	args[0] = allTickets
+	for i, id := range ids {
+		args[i+1] = id
+	}
+
+	err = redisConn.Send("SREM", args...)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %v", ids)
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 

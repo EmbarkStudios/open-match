@@ -565,6 +565,51 @@ func (x *UpdateBackfillRequest) GetBackfill() *Backfill {
 	return nil
 }
 
+type DeleteTicketsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// TicketIds of generated Tickets to be deleted.
+	TicketIds     []string `protobuf:"bytes,1,rep,name=ticket_ids,json=ticketIds,proto3" json:"ticket_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTicketsRequest) Reset() {
+	*x = DeleteTicketsRequest{}
+	mi := &file_api_frontend_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTicketsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTicketsRequest) ProtoMessage() {}
+
+func (x *DeleteTicketsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_frontend_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTicketsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTicketsRequest) Descriptor() ([]byte, []int) {
+	return file_api_frontend_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DeleteTicketsRequest) GetTicketIds() []string {
+	if x != nil {
+		return x.TicketIds
+	}
+	return nil
+}
+
 var File_api_frontend_proto protoreflect.FileDescriptor
 
 const file_api_frontend_proto_rawDesc = "" +
@@ -600,8 +645,10 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\vbackfill_id\x18\x01 \x01(\tR\n" +
 	"backfillId\"H\n" +
 	"\x15UpdateBackfillRequest\x12/\n" +
-	"\bbackfill\x18\x01 \x01(\v2\x13.openmatch.BackfillR\bbackfill2\x99\n" +
+	"\bbackfill\x18\x01 \x01(\v2\x13.openmatch.BackfillR\bbackfill\"5\n" +
+	"\x14DeleteTicketsRequest\x12\x1d\n" +
 	"\n" +
+	"ticket_ids\x18\x01 \x03(\tR\tticketIds2\x88\v\n" +
 	"\x0fFrontendService\x12i\n" +
 	"\fCreateTicket\x12\x1e.openmatch.CreateTicketRequest\x1a\x11.openmatch.Ticket\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/frontendservice/tickets\x12w\n" +
 	"\fDeleteTicket\x12\x1e.openmatch.DeleteTicketRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02)*'/v1/frontendservice/tickets/{ticket_id}\x12l\n" +
@@ -612,7 +659,8 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\x0eDeleteBackfill\x12 .openmatch.DeleteBackfillRequest\x1a\x16.google.protobuf.Empty\"3\x82\xd3\xe4\x93\x02-*+/v1/frontendservice/backfills/{backfill_id}\x12v\n" +
 	"\vGetBackfill\x12\x1d.openmatch.GetBackfillRequest\x1a\x13.openmatch.Backfill\"3\x82\xd3\xe4\x93\x02-\x12+/v1/frontendservice/backfills/{backfill_id}\x12q\n" +
 	"\x0eUpdateBackfill\x12 .openmatch.UpdateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/frontendservice/backfills\x12\x8c\x01\n" +
-	"\x12GetBackfillTickets\x12\x1d.openmatch.GetBackfillRequest\x1a\x1a.openmatch.BackfillTickets\";\x82\xd3\xe4\x93\x025\x123/v1/frontendservice/backfills/{backfill_id}/ticketsB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
+	"\x12GetBackfillTickets\x12\x1d.openmatch.GetBackfillRequest\x1a\x1a.openmatch.BackfillTickets\";\x82\xd3\xe4\x93\x025\x123/v1/frontendservice/backfills/{backfill_id}/tickets\x12m\n" +
+	"\rDeleteTickets\x12\x1f.openmatch.DeleteTicketsRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/v1/frontendservice/ticketsB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
 	"\bFrontend\"I\n" +
 	"\n" +
 	"Open Match\x12\x16https://open-match.dev\x1a#open-match-discuss@googlegroups.com*V\n" +
@@ -634,7 +682,7 @@ func file_api_frontend_proto_rawDescGZIP() []byte {
 	return file_api_frontend_proto_rawDescData
 }
 
-var file_api_frontend_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_api_frontend_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_api_frontend_proto_goTypes = []any{
 	(*CreateTicketRequest)(nil),         // 0: openmatch.CreateTicketRequest
 	(*DeleteTicketRequest)(nil),         // 1: openmatch.DeleteTicketRequest
@@ -647,20 +695,21 @@ var file_api_frontend_proto_goTypes = []any{
 	(*DeleteBackfillRequest)(nil),       // 8: openmatch.DeleteBackfillRequest
 	(*GetBackfillRequest)(nil),          // 9: openmatch.GetBackfillRequest
 	(*UpdateBackfillRequest)(nil),       // 10: openmatch.UpdateBackfillRequest
-	(*Ticket)(nil),                      // 11: openmatch.Ticket
-	(*Assignment)(nil),                  // 12: openmatch.Assignment
-	(*Backfill)(nil),                    // 13: openmatch.Backfill
-	(*emptypb.Empty)(nil),               // 14: google.protobuf.Empty
-	(*BackfillTickets)(nil),             // 15: openmatch.BackfillTickets
+	(*DeleteTicketsRequest)(nil),        // 11: openmatch.DeleteTicketsRequest
+	(*Ticket)(nil),                      // 12: openmatch.Ticket
+	(*Assignment)(nil),                  // 13: openmatch.Assignment
+	(*Backfill)(nil),                    // 14: openmatch.Backfill
+	(*emptypb.Empty)(nil),               // 15: google.protobuf.Empty
+	(*BackfillTickets)(nil),             // 16: openmatch.BackfillTickets
 }
 var file_api_frontend_proto_depIdxs = []int32{
-	11, // 0: openmatch.CreateTicketRequest.ticket:type_name -> openmatch.Ticket
-	12, // 1: openmatch.WatchAssignmentsResponse.assignment:type_name -> openmatch.Assignment
-	12, // 2: openmatch.AcknowledgeBackfillRequest.assignment:type_name -> openmatch.Assignment
-	13, // 3: openmatch.AcknowledgeBackfillResponse.backfill:type_name -> openmatch.Backfill
-	11, // 4: openmatch.AcknowledgeBackfillResponse.tickets:type_name -> openmatch.Ticket
-	13, // 5: openmatch.CreateBackfillRequest.backfill:type_name -> openmatch.Backfill
-	13, // 6: openmatch.UpdateBackfillRequest.backfill:type_name -> openmatch.Backfill
+	12, // 0: openmatch.CreateTicketRequest.ticket:type_name -> openmatch.Ticket
+	13, // 1: openmatch.WatchAssignmentsResponse.assignment:type_name -> openmatch.Assignment
+	13, // 2: openmatch.AcknowledgeBackfillRequest.assignment:type_name -> openmatch.Assignment
+	14, // 3: openmatch.AcknowledgeBackfillResponse.backfill:type_name -> openmatch.Backfill
+	12, // 4: openmatch.AcknowledgeBackfillResponse.tickets:type_name -> openmatch.Ticket
+	14, // 5: openmatch.CreateBackfillRequest.backfill:type_name -> openmatch.Backfill
+	14, // 6: openmatch.UpdateBackfillRequest.backfill:type_name -> openmatch.Backfill
 	0,  // 7: openmatch.FrontendService.CreateTicket:input_type -> openmatch.CreateTicketRequest
 	1,  // 8: openmatch.FrontendService.DeleteTicket:input_type -> openmatch.DeleteTicketRequest
 	2,  // 9: openmatch.FrontendService.GetTicket:input_type -> openmatch.GetTicketRequest
@@ -671,18 +720,20 @@ var file_api_frontend_proto_depIdxs = []int32{
 	9,  // 14: openmatch.FrontendService.GetBackfill:input_type -> openmatch.GetBackfillRequest
 	10, // 15: openmatch.FrontendService.UpdateBackfill:input_type -> openmatch.UpdateBackfillRequest
 	9,  // 16: openmatch.FrontendService.GetBackfillTickets:input_type -> openmatch.GetBackfillRequest
-	11, // 17: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
-	14, // 18: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
-	11, // 19: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
-	4,  // 20: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
-	6,  // 21: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
-	13, // 22: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
-	14, // 23: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
-	13, // 24: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
-	13, // 25: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
-	15, // 26: openmatch.FrontendService.GetBackfillTickets:output_type -> openmatch.BackfillTickets
-	17, // [17:27] is the sub-list for method output_type
-	7,  // [7:17] is the sub-list for method input_type
+	11, // 17: openmatch.FrontendService.DeleteTickets:input_type -> openmatch.DeleteTicketsRequest
+	12, // 18: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
+	15, // 19: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
+	12, // 20: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
+	4,  // 21: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
+	6,  // 22: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
+	14, // 23: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
+	15, // 24: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
+	14, // 25: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
+	14, // 26: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
+	16, // 27: openmatch.FrontendService.GetBackfillTickets:output_type -> openmatch.BackfillTickets
+	15, // 28: openmatch.FrontendService.DeleteTickets:output_type -> google.protobuf.Empty
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -700,7 +751,7 @@ func file_api_frontend_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_frontend_proto_rawDesc), len(file_api_frontend_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

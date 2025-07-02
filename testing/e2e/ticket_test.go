@@ -690,9 +690,11 @@ func TestDeleteTickets(t *testing.T) {
 
 	get, err := om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: t1.Id})
 	require.Nil(t, get)
+	require.Equal(t, "Ticket id: "+t1.Id+" not found", status.Convert(err).Message())
 	require.Equal(t, codes.NotFound, status.Convert(err).Code())
 
 	get, err = om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: t3.Id})
 	require.NoError(t, err)
 	require.NotNil(t, get)
+	require.Equal(t, t3.Id, get.Id)
 }

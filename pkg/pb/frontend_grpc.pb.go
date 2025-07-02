@@ -93,8 +93,8 @@ type FrontendServiceClient interface {
 	// Successfully calling this method guarantees no other updates will happen to
 	// this backfill while this call is in progress
 	GetBackfillTickets(ctx context.Context, in *GetBackfillRequest, opts ...grpc.CallOption) (*BackfillTickets, error)
-	// DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.
-	// The client should delete the Ticket when finished matchmaking with it.
+	// DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
+	// The client should delete the Tickets when finished matchmaking with them.
 	DeleteTickets(ctx context.Context, in *DeleteTicketsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -271,8 +271,8 @@ type FrontendServiceServer interface {
 	// Successfully calling this method guarantees no other updates will happen to
 	// this backfill while this call is in progress
 	GetBackfillTickets(context.Context, *GetBackfillRequest) (*BackfillTickets, error)
-	// DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.
-	// The client should delete the Ticket when finished matchmaking with it.
+	// DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
+	// The client should delete the Tickets when finished matchmaking with them.
 	DeleteTickets(context.Context, *DeleteTicketsRequest) (*emptypb.Empty, error)
 }
 

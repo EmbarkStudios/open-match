@@ -461,8 +461,8 @@ func TestDoDeleteTicket(t *testing.T) {
 		{
 			description: "expect ok code",
 			preAction: func(ctx context.Context, _ context.CancelFunc, store statestore.Service) {
-				store.CreateTicket(ctx, fakeTicket)
-				store.IndexTicket(ctx, fakeTicket)
+				_ = store.CreateTicket(ctx, fakeTicket)
+				_ = store.IndexTicket(ctx, fakeTicket)
 			},
 		},
 	}
@@ -500,6 +500,14 @@ func TestDoDeleteTickets(t *testing.T) {
 				},
 			},
 		},
+		{
+			Id: "3",
+			SearchFields: &pb.SearchFields{
+				DoubleArgs: map[string]float64{
+					"test-arg": 3,
+				},
+			},
+		},
 	}
 
 	tests := []struct {
@@ -515,7 +523,7 @@ func TestDoDeleteTickets(t *testing.T) {
 			wantCode: codes.Unavailable,
 		},
 		{
-			description: "expect ok code since delete ticket does not care about if ticket exists or not",
+			description: "expect ok code since delete tickets does not care about if ticket exists or not",
 			preAction:   func(_ context.Context, _ context.CancelFunc, _ statestore.Service) {},
 			wantCode:    codes.OK,
 		},

@@ -274,7 +274,7 @@
     },
     "/v1/frontendservice/tickets": {
       "delete": {
-        "summary": "DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.\nThe client should delete the Ticket when finished matchmaking with it.",
+        "summary": "DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.\nThe client should delete the Tickets when finished matchmaking with them.",
         "operationId": "FrontendService_DeleteTickets",
         "responses": {
           "200": {

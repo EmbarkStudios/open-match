@@ -233,8 +233,8 @@ service FrontendService {
     };
   }
 
-  // DeleteTicket immediately stops Open Match from using the Ticket for matchmaking and removes the Ticket from state storage.
-  // The client should delete the Ticket when finished matchmaking with it.
+  // DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
+  // The client should delete the Tickets when finished matchmaking with them.
   rpc DeleteTickets(DeleteTicketsRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       delete: "/v1/frontendservice/tickets"

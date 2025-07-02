@@ -442,14 +442,14 @@ func (s *frontendService) DeleteTickets(ctx context.Context, req *pb.DeleteTicke
 }
 
 func doDeleteTickets(ctx context.Context, ids []string, store statestore.Service) error {
-	// Deindex this Ticket to remove it from matchmaking pool.
+	// Deindex these Tickets to remove it from matchmaking pool.
 	err := store.DeindexTickets(ctx, ids)
 	if err != nil {
 		return err
 	}
 
-	//'lazy' ticket delete that should be called after a ticket
-	// has been deindexed.
+	//'lazy' tickets delete that should be called after one or more tickets
+	// have been deindexed.
 	go func() {
 		ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.DeleteTicketsLazy")
 		defer span.End()

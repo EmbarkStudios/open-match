@@ -555,9 +555,11 @@ func (x *AssignmentFailure) GetCause() AssignmentFailure_Cause {
 type AssignTicketsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Assignments is a list of assignment groups that contain assignment and the Tickets to which they should be applied.
-	Assignments   []*AssignmentGroup `protobuf:"bytes,1,rep,name=assignments,proto3" json:"assignments,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Assignments []*AssignmentGroup `protobuf:"bytes,1,rep,name=assignments,proto3" json:"assignments,omitempty"`
+	// If set, all assignments will fail if at least one ticket is missing.
+	DisallowPartial bool `protobuf:"varint,2,opt,name=disallow_partial,json=disallowPartial,proto3" json:"disallow_partial,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AssignTicketsRequest) Reset() {
@@ -595,6 +597,13 @@ func (x *AssignTicketsRequest) GetAssignments() []*AssignmentGroup {
 		return x.Assignments
 	}
 	return nil
+}
+
+func (x *AssignTicketsRequest) GetDisallowPartial() bool {
+	if x != nil {
+		return x.DisallowPartial
+	}
+	return false
 }
 
 type AssignTicketsResponse struct {
@@ -676,9 +685,10 @@ const file_api_backend_proto_rawDesc = "" +
 	"\x05cause\x18\x02 \x01(\x0e2\".openmatch.AssignmentFailure.CauseR\x05cause\"*\n" +
 	"\x05Cause\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x14\n" +
-	"\x10TICKET_NOT_FOUND\x10\x01\"T\n" +
+	"\x10TICKET_NOT_FOUND\x10\x01\"\x7f\n" +
 	"\x14AssignTicketsRequest\x12<\n" +
-	"\vassignments\x18\x01 \x03(\v2\x1a.openmatch.AssignmentGroupR\vassignments\"Q\n" +
+	"\vassignments\x18\x01 \x03(\v2\x1a.openmatch.AssignmentGroupR\vassignments\x12)\n" +
+	"\x10disallow_partial\x18\x02 \x01(\bR\x0fdisallowPartial\"Q\n" +
 	"\x15AssignTicketsResponse\x128\n" +
 	"\bfailures\x18\x01 \x03(\v2\x1c.openmatch.AssignmentFailureR\bfailures2\xad\x04\n" +
 	"\x0eBackendService\x12~\n" +

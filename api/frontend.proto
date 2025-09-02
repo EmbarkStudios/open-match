@@ -252,7 +252,7 @@ service FrontendService {
   // GetIndexedTicketCount returns the count of tickets currently indexed
   rpc GetIndexedTicketCount(GetIndexedTicketCountRequest) returns (GetIndexedTicketCountResponse) {
     option (google.api.http) = {
-      delete: "/v1/frontendservice/tickets/count"
+      get: "/v1/frontendservice/tickets/count"
     };
   }
 }

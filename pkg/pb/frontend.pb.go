@@ -744,7 +744,7 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\x0eUpdateBackfill\x12 .openmatch.UpdateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/frontendservice/backfills\x12\x8c\x01\n" +
 	"\x12GetBackfillTickets\x12\x1d.openmatch.GetBackfillRequest\x1a\x1a.openmatch.BackfillTickets\";\x82\xd3\xe4\x93\x025\x123/v1/frontendservice/backfills/{backfill_id}/tickets\x12m\n" +
 	"\rDeleteTickets\x12\x1f.openmatch.DeleteTicketsRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/v1/frontendservice/tickets\x12\x95\x01\n" +
-	"\x15GetIndexedTicketCount\x12'.openmatch.GetIndexedTicketCountRequest\x1a(.openmatch.GetIndexedTicketCountResponse\")\x82\xd3\xe4\x93\x02#*!/v1/frontendservice/tickets/countB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
+	"\x15GetIndexedTicketCount\x12'.openmatch.GetIndexedTicketCountRequest\x1a(.openmatch.GetIndexedTicketCountResponse\")\x82\xd3\xe4\x93\x02#\x12!/v1/frontendservice/tickets/countB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
 	"\bFrontend\"I\n" +
 	"\n" +
 	"Open Match\x12\x16https://open-match.dev\x1a#open-match-discuss@googlegroups.com*V\n" +

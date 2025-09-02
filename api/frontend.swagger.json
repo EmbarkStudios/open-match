@@ -355,7 +355,7 @@
       }
     },
     "/v1/frontendservice/tickets/count": {
-      "delete": {
+      "get": {
         "summary": "GetIndexedTicketCount returns the count of tickets currently indexed",
         "operationId": "FrontendService_GetIndexedTicketCount",
         "responses": {

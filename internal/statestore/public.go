@@ -124,6 +124,9 @@ type Service interface {
 	// GetIndexedBackfills returns a map containing the IDs and
 	// the Generation number of the backfills currently indexed.
 	GetIndexedBackfills(ctx context.Context) (map[string]int, error)
+
+	// GetIndexedTicketCount returns the current count of indexed tickets
+	GetIndexedTicketCount(ctx context.Context) (int, error)
 }
 
 // New creates a Service based on the configuration.

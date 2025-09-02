@@ -236,6 +236,23 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 	return r, nil
 }
 
+// GetIndexedTicketCount retrieves the current ticket count
+func (rb *redisBackend) GetIndexedTicketCount(ctx context.Context) (int, error) {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return 0, status.Errorf(codes.Unavailable, "GetIndexedTicketCount, failed to connect to redis: %v", err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	count, err := redis.Int(redisConn.Do("SCARD", allTickets))
+	if err != nil {
+		err = errors.Wrap(err, "failed to lookup ticket count")
+		return 0, status.Errorf(codes.Internal, "%v", err)
+	}
+
+	return count, nil
+}
+
 // GetTickets returns multiple tickets from storage.  Missing tickets are
 // silently ignored.
 func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Ticket, error) {

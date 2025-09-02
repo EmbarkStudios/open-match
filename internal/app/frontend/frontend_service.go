@@ -472,3 +472,17 @@ func doDeleteTickets(ctx context.Context, ids []string, store statestore.Service
 	}()
 	return nil
 }
+
+// GetIndexedTicketCount returns the count of tickets currently indexed
+func (s *frontendService) GetIndexedTicketCount(ctx context.Context, _ *pb.GetIndexedTicketCountRequest) (*pb.GetIndexedTicketCountResponse, error) {
+	ticketCount, err := s.store.GetIndexedTicketCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.GetIndexedTicketCountResponse{
+		Count: int32(ticketCount),
+	}
+
+	return resp, nil
+}

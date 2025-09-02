@@ -209,3 +209,9 @@ func (is *instrumentedService) DeleteBackfillCompletely(ctx context.Context, id 
 	defer span.End()
 	return is.s.DeleteBackfillCompletely(ctx, id)
 }
+
+func (is *instrumentedService) GetIndexedTicketCount(ctx context.Context) (int, error) {
+	ctx, span := trace.StartSpan(context.Background(), "statestore/instrumented.GetIndexedTicketCount")
+	defer span.End()
+	return is.s.GetIndexedTicketCount(ctx)
+}

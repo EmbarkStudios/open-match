@@ -53,7 +53,14 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 		return status.Errorf(codes.Internal, "failed to marshal the ticket proto, id: %s: proto: Marshal called with nil", ticket.GetId())
 	}
 
-	_, err = redisConn.Do("SET", ticket.GetId(), value)
+	timeout, isSet := getTicketReleaseTimeout(rb.cfg)
+	if isSet {
+		ticketTimeout := timeout / time.Millisecond
+		// set a TTL on the ticket if configured
+		_, err = redisConn.Do("SET", ticket.GetId(), value, "PX", int64(ticketTimeout), "XX")
+	} else {
+		_, err = redisConn.Do("SET", ticket.GetId(), value)
+	}
 	if err != nil {
 		err = errors.Wrapf(err, "failed to set the value for ticket, id: %s", ticket.GetId())
 		return status.Errorf(codes.Internal, "%v", err)
@@ -91,6 +98,24 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 	err = proto.Unmarshal(value, ticket)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to unmarshal the ticket proto, id: %s", id)
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+
+	timeout, enabled := getTicketReleaseTimeout(rb.cfg)
+	if enabled {
+		ticketTimeout := int64(timeout / time.Millisecond)
+		// refresh the ticket TTL
+		err = redisConn.Send("SET", id, value, "PX", ticketTimeout, "XX")
+	} else {
+		err = redisConn.Send("SET", id, value)
+	}
+	if err != nil {
+		err = errors.Wrapf(err, "failed to set the value for ticket, id: %s", id)
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	err = redisConn.Flush()
+	if err != nil {
+		err = errors.Wrapf(err, "failed to flush the redis connection for ticket id: %s", id)
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
@@ -277,6 +302,17 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
+	timeout, enabled := getTicketReleaseTimeout(rb.cfg)
+	ticketTimeout := int64(timeout / time.Millisecond)
+
+	if enabled {
+		err = redisConn.Send("MULTI")
+		if err != nil {
+			err = errors.Wrapf(err, "failed to send multi command: %v", ids)
+			return nil, status.Errorf(codes.Internal, "%v", err)
+		}
+	}
+
 	r := make([]*pb.Ticket, 0, len(ids))
 
 	for i, b := range ticketBytes {
@@ -289,6 +325,23 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 				return nil, status.Errorf(codes.Internal, "%v", err)
 			}
 			r = append(r, t)
+
+			if enabled {
+				// also update the ticket TTL
+				err = redisConn.Send("SET", ids[i], b, "PX", ticketTimeout, "XX")
+				if err != nil {
+					err = errors.Wrapf(err, "failed to set ticket expiry time %v", ticketTimeout)
+					return nil, status.Errorf(codes.Internal, "%v", err)
+				}
+			}
+		}
+	}
+
+	if enabled {
+		err = redisConn.Flush()
+		if err != nil {
+			err = errors.Wrapf(err, "failed to flush ticket TTL update %v", ids)
+			return nil, status.Errorf(codes.Internal, "%v", err)
 		}
 	}
 
@@ -532,4 +585,17 @@ func getAssignedDeleteTimeout(cfg config.View) time.Duration {
 	}
 
 	return cfg.GetDuration(name)
+}
+func getTicketReleaseTimeout(cfg config.View) (time.Duration, bool) {
+	const (
+		name = "ticketDeleteTimeout"
+		// Default timeout to delete tickets after assignment.
+		defaultTicketDeleteTimeout = 10 * time.Minute
+	)
+
+	if !cfg.IsSet(name) {
+		return defaultTicketDeleteTimeout, false
+	}
+
+	return cfg.GetDuration(name), true
 }

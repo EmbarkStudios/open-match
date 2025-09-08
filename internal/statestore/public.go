@@ -127,6 +127,18 @@ type Service interface {
 
 	// GetIndexedTicketCount returns the current count of indexed tickets
 	GetIndexedTicketCount(ctx context.Context) (int, error)
+
+	//CleanupTickets removes expired tickets
+	CleanupTickets(ctx context.Context) error
+
+	// DeleteTicketCompletely performs a set of operations to remove the ticket and all related entries.
+	DeleteTicketCompletely(ctx context.Context, id string) error
+
+	// GetExpiredTicketIDs gets all ticket IDs which are expired
+	GetExpiredTicketIDs(ctx context.Context) ([]string, error)
+
+	// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
+	GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error)
 }
 
 // New creates a Service based on the configuration.

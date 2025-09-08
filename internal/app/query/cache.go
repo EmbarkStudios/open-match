@@ -147,7 +147,8 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 
 	t := time.Now()
 	previousCount := len(tickets)
-	currentAll, err := store.GetIndexedIDSet(context.Background())
+	// get all indexed tickets within the valid time window
+	currentAll, err := store.GetIndexedIDSetWithTTL(context.Background())
 	if err != nil {
 		return err
 	}

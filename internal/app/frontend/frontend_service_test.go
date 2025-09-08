@@ -781,3 +781,21 @@ func TestGetBackfillTickets(t *testing.T) {
 		})
 	}
 }
+
+func TestGetIndexedTicketCount(t *testing.T) {
+	ctx, cancel := context.WithCancel(utilTesting.NewContext(t))
+	defer cancel()
+
+	store, closer := statestoreTesting.NewStoreServiceForTesting(t, viper.New())
+	defer closer()
+
+	tickets := []*pb.Ticket{{Id: "ticketId"}, {Id: "ticketId2"}}
+	for _, ticket := range tickets {
+		require.NoError(t, store.CreateTicket(ctx, ticket))
+		require.NoError(t, store.IndexTicket(ctx, ticket))
+	}
+
+	ticketCount, err := store.GetIndexedTicketCount(ctx)
+	require.NoError(t, err)
+	require.Equal(t, len(tickets), ticketCount)
+}

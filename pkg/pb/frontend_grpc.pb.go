@@ -34,17 +34,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FrontendService_CreateTicket_FullMethodName        = "/openmatch.FrontendService/CreateTicket"
-	FrontendService_DeleteTicket_FullMethodName        = "/openmatch.FrontendService/DeleteTicket"
-	FrontendService_GetTicket_FullMethodName           = "/openmatch.FrontendService/GetTicket"
-	FrontendService_WatchAssignments_FullMethodName    = "/openmatch.FrontendService/WatchAssignments"
-	FrontendService_AcknowledgeBackfill_FullMethodName = "/openmatch.FrontendService/AcknowledgeBackfill"
-	FrontendService_CreateBackfill_FullMethodName      = "/openmatch.FrontendService/CreateBackfill"
-	FrontendService_DeleteBackfill_FullMethodName      = "/openmatch.FrontendService/DeleteBackfill"
-	FrontendService_GetBackfill_FullMethodName         = "/openmatch.FrontendService/GetBackfill"
-	FrontendService_UpdateBackfill_FullMethodName      = "/openmatch.FrontendService/UpdateBackfill"
-	FrontendService_GetBackfillTickets_FullMethodName  = "/openmatch.FrontendService/GetBackfillTickets"
-	FrontendService_DeleteTickets_FullMethodName       = "/openmatch.FrontendService/DeleteTickets"
+	FrontendService_CreateTicket_FullMethodName          = "/openmatch.FrontendService/CreateTicket"
+	FrontendService_DeleteTicket_FullMethodName          = "/openmatch.FrontendService/DeleteTicket"
+	FrontendService_GetTicket_FullMethodName             = "/openmatch.FrontendService/GetTicket"
+	FrontendService_WatchAssignments_FullMethodName      = "/openmatch.FrontendService/WatchAssignments"
+	FrontendService_AcknowledgeBackfill_FullMethodName   = "/openmatch.FrontendService/AcknowledgeBackfill"
+	FrontendService_CreateBackfill_FullMethodName        = "/openmatch.FrontendService/CreateBackfill"
+	FrontendService_DeleteBackfill_FullMethodName        = "/openmatch.FrontendService/DeleteBackfill"
+	FrontendService_GetBackfill_FullMethodName           = "/openmatch.FrontendService/GetBackfill"
+	FrontendService_UpdateBackfill_FullMethodName        = "/openmatch.FrontendService/UpdateBackfill"
+	FrontendService_GetBackfillTickets_FullMethodName    = "/openmatch.FrontendService/GetBackfillTickets"
+	FrontendService_DeleteTickets_FullMethodName         = "/openmatch.FrontendService/DeleteTickets"
+	FrontendService_GetIndexedTicketCount_FullMethodName = "/openmatch.FrontendService/GetIndexedTicketCount"
 )
 
 // FrontendServiceClient is the client API for FrontendService service.
@@ -96,6 +97,8 @@ type FrontendServiceClient interface {
 	// DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
 	// The client should delete the Tickets when finished matchmaking with them.
 	DeleteTickets(ctx context.Context, in *DeleteTicketsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// GetIndexedTicketCount returns the count of tickets currently indexed
+	GetIndexedTicketCount(ctx context.Context, in *GetIndexedTicketCountRequest, opts ...grpc.CallOption) (*GetIndexedTicketCountResponse, error)
 }
 
 type frontendServiceClient struct {
@@ -225,6 +228,16 @@ func (c *frontendServiceClient) DeleteTickets(ctx context.Context, in *DeleteTic
 	return out, nil
 }
 
+func (c *frontendServiceClient) GetIndexedTicketCount(ctx context.Context, in *GetIndexedTicketCountRequest, opts ...grpc.CallOption) (*GetIndexedTicketCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIndexedTicketCountResponse)
+	err := c.cc.Invoke(ctx, FrontendService_GetIndexedTicketCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FrontendServiceServer is the server API for FrontendService service.
 // All implementations should embed UnimplementedFrontendServiceServer
 // for forward compatibility.
@@ -274,6 +287,8 @@ type FrontendServiceServer interface {
 	// DeleteTickets immediately stops Open Match from using the Tickets for matchmaking and removes the Tickets from state storage.
 	// The client should delete the Tickets when finished matchmaking with them.
 	DeleteTickets(context.Context, *DeleteTicketsRequest) (*emptypb.Empty, error)
+	// GetIndexedTicketCount returns the count of tickets currently indexed
+	GetIndexedTicketCount(context.Context, *GetIndexedTicketCountRequest) (*GetIndexedTicketCountResponse, error)
 }
 
 // UnimplementedFrontendServiceServer should be embedded to have
@@ -315,6 +330,9 @@ func (UnimplementedFrontendServiceServer) GetBackfillTickets(context.Context, *G
 }
 func (UnimplementedFrontendServiceServer) DeleteTickets(context.Context, *DeleteTicketsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteTickets not implemented")
+}
+func (UnimplementedFrontendServiceServer) GetIndexedTicketCount(context.Context, *GetIndexedTicketCountRequest) (*GetIndexedTicketCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIndexedTicketCount not implemented")
 }
 func (UnimplementedFrontendServiceServer) testEmbeddedByValue() {}
 
@@ -527,6 +545,24 @@ func _FrontendService_DeleteTickets_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FrontendService_GetIndexedTicketCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIndexedTicketCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FrontendServiceServer).GetIndexedTicketCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FrontendService_GetIndexedTicketCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FrontendServiceServer).GetIndexedTicketCount(ctx, req.(*GetIndexedTicketCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FrontendService_ServiceDesc is the grpc.ServiceDesc for FrontendService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -573,6 +609,10 @@ var FrontendService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteTickets",
 			Handler:    _FrontendService_DeleteTickets_Handler,
+		},
+		{
+			MethodName: "GetIndexedTicketCount",
+			Handler:    _FrontendService_GetIndexedTicketCount_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

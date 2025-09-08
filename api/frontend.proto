@@ -136,6 +136,14 @@ message DeleteTicketsRequest {
   repeated string ticket_ids = 1;
 }
 
+message GetIndexedTicketCountRequest{
+
+}
+
+message GetIndexedTicketCountResponse{
+  int32 count =1;
+}
+
 // The FrontendService implements APIs to manage and query status of a Tickets.
 service FrontendService {
   // CreateTicket assigns an unique TicketId to the input Ticket and record it in state storage.
@@ -238,6 +246,13 @@ service FrontendService {
   rpc DeleteTickets(DeleteTicketsRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       delete: "/v1/frontendservice/tickets"
+    };
+  }
+
+  // GetIndexedTicketCount returns the count of tickets currently indexed
+  rpc GetIndexedTicketCount(GetIndexedTicketCountRequest) returns (GetIndexedTicketCountResponse) {
+    option (google.api.http) = {
+      get: "/v1/frontendservice/tickets/count"
     };
   }
 }

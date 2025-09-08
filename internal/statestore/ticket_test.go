@@ -994,6 +994,39 @@ func TestAddTicketsToPendingRelease(t *testing.T) {
 	require.Contains(t, status.Convert(err).Message(), "AddTicketsToPendingRelease, failed to connect to redis:")
 }
 
+func TestGetIndexedTicketCount(t *testing.T) {
+	cfg, closer := createRedis(t, false, "")
+	defer closer()
+	service := New(cfg)
+	require.NotNil(t, service)
+	defer service.Close()
+
+	ctx := utilTesting.NewContext(t)
+	generateTickets(ctx, t, service, 2)
+
+	c, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", cfg.GetString("redis.hostname"), cfg.GetString("redis.port")))
+	require.NoError(t, err)
+	idsIndexed, err := redis.Strings(c.Do("SMEMBERS", "allTickets"))
+	require.NoError(t, err)
+	require.Len(t, idsIndexed, 2)
+	require.Equal(t, "mockTicketID-0", idsIndexed[0])
+	require.Equal(t, "mockTicketID-1", idsIndexed[1])
+
+	// count indexed tickets
+	count, err := service.GetIndexedTicketCount(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, count)
+
+	// de-index one of the tickets
+	err = service.DeindexTicket(ctx, idsIndexed[0])
+	require.NoError(t, err)
+
+	// double check again
+	count, err = service.GetIndexedTicketCount(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
 func testConnect(t *testing.T, withSentinel bool, withPassword string) {
 	cfg, closer := createRedis(t, withSentinel, withPassword)
 	defer closer()

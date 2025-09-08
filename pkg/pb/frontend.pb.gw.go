@@ -420,6 +420,27 @@ func local_request_FrontendService_DeleteTickets_0(ctx context.Context, marshale
 	return msg, metadata, err
 }
 
+func request_FrontendService_GetIndexedTicketCount_0(ctx context.Context, marshaler runtime.Marshaler, client FrontendServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIndexedTicketCountRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetIndexedTicketCount(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_FrontendService_GetIndexedTicketCount_0(ctx context.Context, marshaler runtime.Marshaler, server FrontendServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIndexedTicketCountRequest
+		metadata runtime.ServerMetadata
+	)
+	msg, err := server.GetIndexedTicketCount(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterFrontendServiceHandlerServer registers the http handlers for service FrontendService to "mux".
 // UnaryRPC     :call FrontendServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -632,6 +653,26 @@ func RegisterFrontendServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 		forward_FrontendService_DeleteTickets_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_FrontendService_GetIndexedTicketCount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/openmatch.FrontendService/GetIndexedTicketCount", runtime.WithHTTPPathPattern("/v1/frontendservice/tickets/count"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_FrontendService_GetIndexedTicketCount_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_FrontendService_GetIndexedTicketCount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -860,33 +901,52 @@ func RegisterFrontendServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 		}
 		forward_FrontendService_DeleteTickets_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_FrontendService_GetIndexedTicketCount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/openmatch.FrontendService/GetIndexedTicketCount", runtime.WithHTTPPathPattern("/v1/frontendservice/tickets/count"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_FrontendService_GetIndexedTicketCount_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_FrontendService_GetIndexedTicketCount_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
 var (
-	pattern_FrontendService_CreateTicket_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "tickets"}, ""))
-	pattern_FrontendService_DeleteTicket_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "tickets", "ticket_id"}, ""))
-	pattern_FrontendService_GetTicket_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "tickets", "ticket_id"}, ""))
-	pattern_FrontendService_WatchAssignments_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "tickets", "ticket_id", "assignments"}, ""))
-	pattern_FrontendService_AcknowledgeBackfill_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "backfills", "backfill_id", "acknowledge"}, ""))
-	pattern_FrontendService_CreateBackfill_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "backfills"}, ""))
-	pattern_FrontendService_DeleteBackfill_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "backfills", "backfill_id"}, ""))
-	pattern_FrontendService_GetBackfill_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "backfills", "backfill_id"}, ""))
-	pattern_FrontendService_UpdateBackfill_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "backfills"}, ""))
-	pattern_FrontendService_GetBackfillTickets_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "backfills", "backfill_id", "tickets"}, ""))
-	pattern_FrontendService_DeleteTickets_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "tickets"}, ""))
+	pattern_FrontendService_CreateTicket_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "tickets"}, ""))
+	pattern_FrontendService_DeleteTicket_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "tickets", "ticket_id"}, ""))
+	pattern_FrontendService_GetTicket_0             = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "tickets", "ticket_id"}, ""))
+	pattern_FrontendService_WatchAssignments_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "tickets", "ticket_id", "assignments"}, ""))
+	pattern_FrontendService_AcknowledgeBackfill_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "backfills", "backfill_id", "acknowledge"}, ""))
+	pattern_FrontendService_CreateBackfill_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "backfills"}, ""))
+	pattern_FrontendService_DeleteBackfill_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "backfills", "backfill_id"}, ""))
+	pattern_FrontendService_GetBackfill_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "frontendservice", "backfills", "backfill_id"}, ""))
+	pattern_FrontendService_UpdateBackfill_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "backfills"}, ""))
+	pattern_FrontendService_GetBackfillTickets_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "frontendservice", "backfills", "backfill_id", "tickets"}, ""))
+	pattern_FrontendService_DeleteTickets_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "frontendservice", "tickets"}, ""))
+	pattern_FrontendService_GetIndexedTicketCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "frontendservice", "tickets", "count"}, ""))
 )
 
 var (
-	forward_FrontendService_CreateTicket_0        = runtime.ForwardResponseMessage
-	forward_FrontendService_DeleteTicket_0        = runtime.ForwardResponseMessage
-	forward_FrontendService_GetTicket_0           = runtime.ForwardResponseMessage
-	forward_FrontendService_WatchAssignments_0    = runtime.ForwardResponseStream
-	forward_FrontendService_AcknowledgeBackfill_0 = runtime.ForwardResponseMessage
-	forward_FrontendService_CreateBackfill_0      = runtime.ForwardResponseMessage
-	forward_FrontendService_DeleteBackfill_0      = runtime.ForwardResponseMessage
-	forward_FrontendService_GetBackfill_0         = runtime.ForwardResponseMessage
-	forward_FrontendService_UpdateBackfill_0      = runtime.ForwardResponseMessage
-	forward_FrontendService_GetBackfillTickets_0  = runtime.ForwardResponseMessage
-	forward_FrontendService_DeleteTickets_0       = runtime.ForwardResponseMessage
+	forward_FrontendService_CreateTicket_0          = runtime.ForwardResponseMessage
+	forward_FrontendService_DeleteTicket_0          = runtime.ForwardResponseMessage
+	forward_FrontendService_GetTicket_0             = runtime.ForwardResponseMessage
+	forward_FrontendService_WatchAssignments_0      = runtime.ForwardResponseStream
+	forward_FrontendService_AcknowledgeBackfill_0   = runtime.ForwardResponseMessage
+	forward_FrontendService_CreateBackfill_0        = runtime.ForwardResponseMessage
+	forward_FrontendService_DeleteBackfill_0        = runtime.ForwardResponseMessage
+	forward_FrontendService_GetBackfill_0           = runtime.ForwardResponseMessage
+	forward_FrontendService_UpdateBackfill_0        = runtime.ForwardResponseMessage
+	forward_FrontendService_GetBackfillTickets_0    = runtime.ForwardResponseMessage
+	forward_FrontendService_DeleteTickets_0         = runtime.ForwardResponseMessage
+	forward_FrontendService_GetIndexedTicketCount_0 = runtime.ForwardResponseMessage
 )

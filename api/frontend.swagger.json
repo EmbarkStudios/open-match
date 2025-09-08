@@ -354,6 +354,36 @@
         ]
       }
     },
+    "/v1/frontendservice/tickets/count": {
+      "get": {
+        "summary": "GetIndexedTicketCount returns the count of tickets currently indexed",
+        "operationId": "FrontendService_GetIndexedTicketCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/openmatchGetIndexedTicketCountResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "FrontendService"
+        ]
+      }
+    },
     "/v1/frontendservice/tickets/{ticket_id}": {
       "get": {
         "summary": "GetTicket get the Ticket associated with the specified TicketId.",
@@ -598,6 +628,15 @@
         "ticket": {
           "$ref": "#/definitions/openmatchTicket",
           "description": "A Ticket object with SearchFields defined."
+        }
+      }
+    },
+    "openmatchGetIndexedTicketCountResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

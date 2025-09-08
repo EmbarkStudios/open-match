@@ -16,7 +16,10 @@ package statestore
 
 import (
 	"context"
+
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -32,6 +35,7 @@ import (
 const (
 	allTickets        = "allTickets"
 	proposedTicketIDs = "proposed_ticket_ids"
+	allTicketsWithTTL = "allTicketsWithTTL"
 )
 
 // CreateTicket creates a new Ticket in the state storage. If the id already exists, it will be overwritten.
@@ -53,14 +57,7 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 		return status.Errorf(codes.Internal, "failed to marshal the ticket proto, id: %s: proto: Marshal called with nil", ticket.GetId())
 	}
 
-	timeout, isSet := getTicketReleaseTimeout(rb.cfg)
-	if isSet {
-		ticketTimeout := timeout / time.Millisecond
-		// set a TTL on the ticket if configured
-		_, err = redisConn.Do("SET", ticket.GetId(), value, "PX", int64(ticketTimeout), "XX")
-	} else {
-		_, err = redisConn.Do("SET", ticket.GetId(), value)
-	}
+	_, err = redisConn.Do("SET", ticket.GetId(), value)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to set the value for ticket, id: %s", ticket.GetId())
 		return status.Errorf(codes.Internal, "%v", err)
@@ -101,25 +98,104 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
-	timeout, enabled := getTicketReleaseTimeout(rb.cfg)
-	if enabled {
-		ticketTimeout := int64(timeout / time.Millisecond)
-		// refresh the ticket TTL
-		err = redisConn.Send("SET", id, value, "PX", ticketTimeout, "XX")
-	} else {
-		err = redisConn.Send("SET", id, value)
-	}
-	if err != nil {
-		err = errors.Wrapf(err, "failed to set the value for ticket, id: %s", id)
-		return nil, status.Errorf(codes.Internal, "%v", err)
-	}
-	err = redisConn.Flush()
-	if err != nil {
-		err = errors.Wrapf(err, "failed to flush the redis connection for ticket id: %s", id)
-		return nil, status.Errorf(codes.Internal, "%v", err)
+	// if a ticket is assigned, its given an TTL and automatically de-indexed
+	if ticket.Assignment == nil {
+		ticketTTL := getTicketReleaseTimeout(rb.cfg)
+		expiry := time.Now().Add(ticketTTL).UnixNano()
+
+		expiredKey, err := rb.checkIfExpired(ctx, id)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to check if ticket is expired, id: %s", id)
+			return nil, err
+		}
+
+		if !expiredKey {
+			_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiry, id)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to update score for ticket id: %s", id)
+				return nil, status.Errorf(codes.Internal, "%v", err)
+			}
+		}
 	}
 
 	return ticket, nil
+}
+
+func (rb *redisBackend) UpdateIndexedTicketTTL(ctx context.Context, ticketId string) error {
+	m := rb.NewMutex(ticketId)
+	//  TODO: should we add a timeout to this acquisition
+	err := m.Lock(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if _, err = m.Unlock(context.Background()); err != nil {
+			logger.WithError(err).Error("error on mutex unlock")
+		}
+	}()
+
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "checkIfExpired, id: %s, failed to connect to redis: %v", ticketId, err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	score, err := redis.Float64(redisConn.Do("ZSCORE", allTicketsWithTTL, ticketId))
+	if errors.Is(err, redis.ErrNil) {
+		logger.WithError(err).Errorf("Ticket id: %s not found", ticketId)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	if score <= float64(time.Now().UnixNano()) {
+		return errors.New("ticket is already expired")
+	}
+
+	ticketTTL := getTicketReleaseTimeout(rb.cfg)
+	expiry := time.Now().Add(ticketTTL).UnixNano()
+
+	_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiry, ticketId)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to update score for ticket id: %s", ticketId)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	return nil
+}
+
+func (rb *redisBackend) checkIfExpired(ctx context.Context, id string) (bool, error) {
+	m := rb.NewMutex(id)
+	//  TODO: should we add a timeout to this acquisition
+	err := m.Lock(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	defer func() {
+		if _, err = m.Unlock(context.Background()); err != nil {
+			logger.WithError(err).Error("error on mutex unlock")
+		}
+	}()
+
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return false, status.Errorf(codes.Unavailable, "checkIfExpired, id: %s, failed to connect to redis: %v", id, err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	score, err := redis.Float64(redisConn.Do("ZSCORE", allTicketsWithTTL, id))
+	if errors.Is(err, redis.ErrNil) {
+		logger.WithError(err).Errorf("Ticket id: %s not found", id)
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return score <= float64(time.Now().UnixNano()), nil
 }
 
 // DeleteTicket removes the Ticket with the specified id from state storage.
@@ -183,6 +259,14 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
+	ticketTTL := getTicketReleaseTimeout(rb.cfg)
+	expiry := time.Now().Add(ticketTTL).UnixNano()
+	err = redisConn.Send("ZADD", allTicketsWithTTL, expiry, ticket.Id)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to add ticket to all tickets, id: %s", ticket.Id)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
 	return nil
 }
 
@@ -195,6 +279,12 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 	defer handleConnectionClose(&redisConn)
 
 	err = redisConn.Send("SREM", allTickets, id)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %s", id)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	err = redisConn.Send("ZREM", allTicketsWithTTL, id)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %s", id)
 		return status.Errorf(codes.Internal, "%v", err)
@@ -218,6 +308,13 @@ func (rb *redisBackend) DeindexTickets(ctx context.Context, ids []string) error 
 	}
 
 	err = redisConn.Send("SREM", args...)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %v", ids)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	args[0] = allTicketsWithTTL
+	err = redisConn.Send("ZREM", args...)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %v", ids)
 		return status.Errorf(codes.Internal, "%v", err)
@@ -261,6 +358,43 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 	return r, nil
 }
 
+// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
+func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error) {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "GetIndexedIDSetWithTTL, failed to connect to redis: %v", err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	ttl := getBackfillReleaseTimeout(rb.cfg)
+	curTime := time.Now()
+	endTimeInt := curTime.Add(time.Hour).UnixNano()
+	startTimeInt := curTime.Add(-ttl).UnixNano()
+
+	// Filter out tickets that are fetched but not assigned within ttl time (ms).
+	idsInPendingReleases, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", proposedTicketIDs, startTimeInt, endTimeInt))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
+	}
+
+	curTimeUnix := curTime.UnixNano()
+	// fetch only tickets with a score or ttl ahead of or equal to current time
+	idsIndexed, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", allTicketsWithTTL, curTimeUnix, "+inf"))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+	}
+
+	r := make(map[string]struct{}, len(idsIndexed))
+	for _, id := range idsIndexed {
+		r[id] = struct{}{}
+	}
+	for _, id := range idsInPendingReleases {
+		delete(r, id)
+	}
+
+	return r, nil
+}
+
 // GetIndexedTicketCount retrieves the current ticket count
 func (rb *redisBackend) GetIndexedTicketCount(ctx context.Context) (int, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
@@ -269,7 +403,9 @@ func (rb *redisBackend) GetIndexedTicketCount(ctx context.Context) (int, error) 
 	}
 	defer handleConnectionClose(&redisConn)
 
-	count, err := redis.Int(redisConn.Do("SCARD", allTickets))
+	now := time.Now().UnixNano()
+	// fetch only tickets with a score or ttl ahead of or equal to current time
+	count, err := redis.Int(redisConn.Do("ZCOUNT", allTicketsWithTTL, now, "+inf"))
 	if err != nil {
 		err = errors.Wrap(err, "failed to lookup ticket count")
 		return 0, status.Errorf(codes.Internal, "%v", err)
@@ -302,18 +438,8 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
-	timeout, enabled := getTicketReleaseTimeout(rb.cfg)
-	ticketTimeout := int64(timeout / time.Millisecond)
-
-	if enabled {
-		err = redisConn.Send("MULTI")
-		if err != nil {
-			err = errors.Wrapf(err, "failed to send multi command: %v", ids)
-			return nil, status.Errorf(codes.Internal, "%v", err)
-		}
-	}
-
 	r := make([]*pb.Ticket, 0, len(ids))
+	ticketTTL := getTicketReleaseTimeout(rb.cfg)
 
 	for i, b := range ticketBytes {
 		// Tickets may be deleted by the time we read it from redis.
@@ -326,23 +452,32 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 			}
 			r = append(r, t)
 
-			if enabled {
-				// also update the ticket TTL
-				err = redisConn.Send("SET", ids[i], b, "PX", ticketTimeout, "XX")
+			if t.Assignment == nil {
+				// if a ticket is assigned, its given an TTL and automatically de-indexed
+				expiredKey, err := rb.checkIfExpired(ctx, t.Id)
 				if err != nil {
-					err = errors.Wrapf(err, "failed to set ticket expiry time %v", ticketTimeout)
+					err = errors.Wrapf(err, "failed to check ticket expiry, %v", err)
+					return nil, status.Errorf(codes.Internal, "%v", err)
+				}
+
+				if expiredKey {
+					continue
+				}
+
+				expiry := time.Now().Add(ticketTTL).UnixNano()
+				// update the indexed ticket's ttl. careful this might become slow.
+				err = redisConn.Send("ZADD", allTicketsWithTTL, "XX", "CH", expiry, t.Id)
+				if err != nil {
+					err = errors.Wrapf(err, "failed to update ttl for ticket id: %s", t.Id)
 					return nil, status.Errorf(codes.Internal, "%v", err)
 				}
 			}
 		}
 	}
 
-	if enabled {
-		err = redisConn.Flush()
-		if err != nil {
-			err = errors.Wrapf(err, "failed to flush ticket TTL update %v", ids)
-			return nil, status.Errorf(codes.Internal, "%v", err)
-		}
+	err = redisConn.Flush()
+	if err != nil {
+		return nil, errors.Wrap(err, "error executing ticket ttl update")
 	}
 
 	return r, nil
@@ -560,6 +695,112 @@ func (rb *redisBackend) newConstantBackoffStrategy() backoff.BackOff {
 	return backoff.BackOff(backoffStrat)
 }
 
+// GetExpiredTicketIDs gets all ticket IDs which are expired
+func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context) ([]string, error) {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "GetExpiredBackfillIDs, failed to connect to redis: %v", err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	ticketTTL := getTicketReleaseTimeout(rb.cfg)
+	curTime := time.Now()
+	endTimeInt := curTime.Add(-ticketTTL).UnixNano() // anything before the now - ttl
+	startTimeInt := 0                                // unix epoc start time
+
+	// Filter out ticket IDs that are fetched but not assigned within TTL time (ms).
+	expiredTicketIds, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", allTicketsWithTTL, startTimeInt, endTimeInt))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting expired tickets %v", err)
+	}
+
+	return expiredTicketIds, nil
+}
+
+// DeleteTicketCompletely performs a set of operations to remove the ticket and all related entities.
+func (rb *redisBackend) DeleteTicketCompletely(ctx context.Context, id string) error {
+	m := rb.NewMutex(id)
+	err := m.Lock(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if _, err = m.Unlock(context.Background()); err != nil {
+			logger.WithError(err).Error("error on mutex unlock")
+		}
+	}()
+
+	// 1. deindex ticket
+	err = rb.DeindexTicket(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// log the errors and try to perform as mush actions as possible
+
+	// 2. delete the ticket
+	err = rb.DeleteTicket(ctx, id)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"error":       err.Error(),
+			"backfill_id": id,
+		}).Error("DeleteTicketCompletely - failed to DeleteTicket")
+	}
+
+	// 3. delete ticket from pending release state
+	err = rb.DeleteTicketsFromPendingRelease(ctx, []string{id})
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"error":     err.Error(),
+			"ticket_id": id,
+		}).Error("DeleteTicketCompletely - failed to DeleteTicketsFromPendingRelease")
+	}
+
+	return nil
+}
+
+func (rb *redisBackend) cleanupTicketsWorker(ctx context.Context, ticketIDsCh <-chan string, wg *sync.WaitGroup) {
+	var err error
+	for id := range ticketIDsCh {
+		logger.WithFields(logrus.Fields{
+			"ticket_id": id,
+		}).Info("cleanupTicketsWorker - starting")
+		err = rb.DeleteTicketCompletely(ctx, id)
+		if err != nil {
+			logger.WithFields(logrus.Fields{
+				"error":     err.Error(),
+				"ticket_id": id,
+			}).Error("CleanupTickets")
+		}
+		wg.Done()
+	}
+}
+
+func (rb *redisBackend) CleanupTickets(ctx context.Context) error {
+	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(expiredTicketIDs))
+	ticketIDsCh := make(chan string, len(expiredTicketIDs))
+
+	for w := 1; w <= 3; w++ {
+		go rb.cleanupTicketsWorker(ctx, ticketIDsCh, &wg)
+	}
+
+	for _, id := range expiredTicketIDs {
+		ticketIDsCh <- id
+	}
+	close(ticketIDsCh)
+
+	wg.Wait()
+
+	return nil
+}
+
 // TODO: add cache the backoff object
 // nolint: unused
 func (rb *redisBackend) newExponentialBackoffStrategy() backoff.BackOff {
@@ -586,16 +827,16 @@ func getAssignedDeleteTimeout(cfg config.View) time.Duration {
 
 	return cfg.GetDuration(name)
 }
-func getTicketReleaseTimeout(cfg config.View) (time.Duration, bool) {
+func getTicketReleaseTimeout(cfg config.View) time.Duration {
 	const (
 		name = "ticketDeleteTimeout"
-		// Default timeout to delete tickets after assignment.
-		defaultTicketDeleteTimeout = 10 * time.Minute
+		// Default timeout to delete tickets if not assigned or queried
+		defaultTicketDeleteTimeout = time.Minute
 	)
 
 	if !cfg.IsSet(name) {
-		return defaultTicketDeleteTimeout, false
+		return defaultTicketDeleteTimeout
 	}
 
-	return cfg.GetDuration(name), true
+	return cfg.GetDuration(name)
 }

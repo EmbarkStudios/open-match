@@ -628,7 +628,6 @@ func TestAssignedTicketDeleteTimeout(t *testing.T) {
 	get, err = om.Frontend().GetTicket(ctx, &pb.GetTicketRequest{TicketId: t1.Id})
 	require.Nil(t, get)
 	require.Equal(t, codes.NotFound, status.Convert(err).Code())
-
 }
 
 func TestWatchAssignments(t *testing.T) {

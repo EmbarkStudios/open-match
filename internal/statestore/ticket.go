@@ -100,9 +100,6 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 
 	// if a ticket is assigned, its given an TTL and automatically de-indexed
 	if ticket.Assignment == nil {
-		ticketTTL := getTicketReleaseTimeout(rb.cfg)
-		expiry := time.Now().Add(ticketTTL).UnixNano()
-
 		expiredKey, err := rb.checkIfExpired(ctx, id)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to check if ticket is expired, id: %s", id)
@@ -110,6 +107,9 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 		}
 
 		if !expiredKey {
+			ticketTTL := getTicketReleaseTimeout(rb.cfg)
+			expiry := time.Now().Add(ticketTTL).UnixNano()
+
 			_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiry, id)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to update score for ticket id: %s", id)

@@ -188,7 +188,7 @@ func (rb *redisBackend) checkIfExpired(ctx context.Context, id string) (bool, er
 
 	score, err := redis.Float64(redisConn.Do("ZSCORE", allTicketsWithTTL, id))
 	if errors.Is(err, redis.ErrNil) {
-		logger.WithError(err).Errorf("Ticket id: %s not found", id)
+		logger.WithError(err).Errorf("checkIfExpired: Ticket id: %s not found", id)
 		return true, nil
 	}
 	if err != nil {
@@ -452,25 +452,27 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 			}
 			r = append(r, t)
 
-			if t.Assignment == nil {
+			if t.Assignment != nil {
 				// if a ticket is assigned, its given an TTL and automatically de-indexed
-				expiredKey, err := rb.checkIfExpired(ctx, t.Id)
-				if err != nil {
-					err = errors.Wrapf(err, "failed to check ticket expiry, %v", err)
-					return nil, status.Errorf(codes.Internal, "%v", err)
-				}
+				continue
+			}
 
-				if expiredKey {
-					continue
-				}
+			expiredKey, err := rb.checkIfExpired(ctx, t.Id)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to check ticket expiry, %v", err)
+				return nil, status.Errorf(codes.Internal, "%v", err)
+			}
 
-				expiry := time.Now().Add(ticketTTL).UnixNano()
-				// update the indexed ticket's ttl. careful this might become slow.
-				err = redisConn.Send("ZADD", allTicketsWithTTL, "XX", "CH", expiry, t.Id)
-				if err != nil {
-					err = errors.Wrapf(err, "failed to update ttl for ticket id: %s", t.Id)
-					return nil, status.Errorf(codes.Internal, "%v", err)
-				}
+			if expiredKey {
+				continue
+			}
+
+			expiry := time.Now().Add(ticketTTL).UnixNano()
+			// update the indexed ticket's ttl. careful this might become slow.
+			err = redisConn.Send("ZADD", allTicketsWithTTL, "XX", "CH", expiry, t.Id)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to update ttl for ticket id: %s", t.Id)
+				return nil, status.Errorf(codes.Internal, "%v", err)
 			}
 		}
 	}

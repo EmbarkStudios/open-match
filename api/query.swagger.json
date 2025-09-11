@@ -341,6 +341,11 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The number of ticket Ids to limit the query on. If not specified, will default to querying all"
         }
       }
     },
@@ -362,6 +367,11 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The number of ticket to limit the query on. If not specified, will default to querying all"
         }
       }
     },

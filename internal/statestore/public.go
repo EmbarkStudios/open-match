@@ -16,6 +16,7 @@ package statestore
 
 import (
 	"context"
+	"iter"
 
 	"open-match.dev/open-match/internal/config"
 	"open-match.dev/open-match/internal/telemetry"
@@ -139,6 +140,9 @@ type Service interface {
 
 	// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
 	GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error)
+
+	// StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
+	StreamIndexedIDSet(ctx context.Context, queryLimit int) (iter.Seq2[map[string]struct{}, error], error)
 }
 
 // New creates a Service based on the configuration.

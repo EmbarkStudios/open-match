@@ -1339,6 +1339,34 @@ func TestCleanupTickets(t *testing.T) {
 	require.Contains(t, status.Convert(err).Message(), "GetTicket, id: 12345, failed to connect to redis:")
 }
 
+func TestStreamIndexedIDSet(t *testing.T) {
+	cfg, closer := createRedis(t, false, "", 500*time.Millisecond)
+	defer closer()
+	service := New(cfg)
+	require.NotNil(t, service)
+	defer service.Close()
+
+	ctx := utilTesting.NewContext(t)
+
+	_, ids := generateTickets(ctx, t, service, 1000)
+
+	ticketIdStream, err := service.StreamIndexedIDSet(ctx, 800)
+	require.NoError(t, err)
+
+	collectedTickets := make([]string, 0, 800)
+	for ticketSet, err := range ticketIdStream {
+		require.NoError(t, err)
+		for id := range ticketSet {
+			collectedTickets = append(collectedTickets, id)
+		}
+	}
+
+	require.Len(t, collectedTickets, 800)
+	for _, id := range collectedTickets {
+		require.Contains(t, ids, id)
+	}
+}
+
 func testConnect(t *testing.T, withSentinel bool, withPassword string) {
 	cfg, closer := createRedis(t, withSentinel, withPassword, 0)
 	defer closer()

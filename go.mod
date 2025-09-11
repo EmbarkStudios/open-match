@@ -139,6 +139,7 @@ require (
 
 replace (
 	google.golang.org/api v0.0.0 => google.golang.org/api v0.155.0 // lowest non breaking version fixing grpc dial options
+	google.golang.org/protobuf v0.0.0 => google.golang.org/protobuf v1.36.8
 	k8s.io/api v0.0.0 => k8s.io/api v0.28.0 // kubernetes-1.14.10
 	k8s.io/apimachinery v0.0.0 => k8s.io/apimachinery v0.28.0
 	k8s.io/client-go v0.0.0 => k8s.io/client-go v0.28.0

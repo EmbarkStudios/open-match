@@ -697,3 +697,47 @@ func TestDeleteTickets(t *testing.T) {
 	require.NotNil(t, get)
 	require.Equal(t, t3.Id, get.Id)
 }
+
+//func BenchmarkMapUpdate(b *testing.B) {
+//	om := newBenchOM(b)
+//	ctx := context.Background()
+//
+//	// seed the database
+//	for range 500_000 {
+//		_, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: &pb.Ticket{}})
+//		if err != nil {
+//			b.Error(err)
+//		}
+//	}
+//
+//	b.Log("finished seeding")
+//
+//	b.ResetTimer()
+//	b.ReportAllocs()
+//
+//	b.RunParallel(func(pbi *testing.PB) {
+//		for pbi.Next() {
+//			stream, err := om.Query().QueryTickets(ctx, &pb.QueryTicketsRequest{
+//				Pool:  &pb.Pool{},
+//				Limit: 10_000,
+//			})
+//			if err != nil {
+//				b.Fatal(err)
+//			}
+//
+//			stream.CloseSend()
+//			//var count int
+//			//for {
+//			//	_, err := stream.Recv()
+//			//	if err == io.EOF {
+//			//		break // stream finished
+//			//	}
+//			//	if err != nil {
+//			//		log.Fatalf("stream error: %v", err)
+//			//	}
+//			//	count++
+//			//}
+//			//b.Logf("query tickets: %v", count)
+//		}
+//	})
+//}

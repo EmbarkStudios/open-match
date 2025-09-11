@@ -58,6 +58,9 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 message QueryTicketsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
+
+  // The number of ticket to limit the query on. If not specified, will default to querying all
+  int32 limit = 2;
 }
 
 message QueryTicketsResponse {
@@ -68,6 +71,9 @@ message QueryTicketsResponse {
 message QueryTicketIdsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
+
+  // The number of ticket Ids to limit the query on. If not specified, will default to querying all
+  int32 limit = 2;
 }
 
 message QueryTicketIdsResponse {

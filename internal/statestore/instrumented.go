@@ -16,6 +16,7 @@ package statestore
 
 import (
 	"context"
+	"iter"
 
 	"go.opencensus.io/trace"
 	"open-match.dev/open-match/pkg/pb"
@@ -243,4 +244,11 @@ func (is *instrumentedService) GetIndexedIDSetWithTTL(ctx context.Context) (map[
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetIndexedIDSetWithTTL")
 	defer span.End()
 	return is.s.GetIndexedIDSetWithTTL(ctx)
+}
+
+// StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
+func (is *instrumentedService) StreamIndexedIDSet(ctx context.Context, batchSize int) (iter.Seq2[map[string]struct{}, error], error) {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.StreamIndexedIDSet")
+	defer span.End()
+	return is.s.StreamIndexedIDSet(ctx, batchSize)
 }

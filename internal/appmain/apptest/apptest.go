@@ -154,3 +154,20 @@ func GRPCClient(t *testing.T, cfg config.View, service string) *grpc.ClientConn 
 	})
 	return conn
 }
+
+// GRPCClientBench creates a new client which connects to the specified service. It
+// immediately fails the test if there is an error, and will also automatically
+// close after the test completes.
+func GRPCClientBench(t *testing.B, cfg config.View, service string) *grpc.ClientConn {
+	conn, err := rpc.GRPCClientFromConfig(cfg, service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		err := conn.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	return conn
+}

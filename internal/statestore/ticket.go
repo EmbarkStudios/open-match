@@ -16,9 +16,11 @@ package statestore
 
 import (
 	"context"
-
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"iter"
+	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -393,6 +395,102 @@ func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]
 	}
 
 	return r, nil
+}
+
+// StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
+func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) (iter.Seq2[map[string]struct{}, error], error) {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "GetIndexedIDSetWithTTL, failed to connect to redis: %v", err)
+	}
+
+	ttl := getBackfillReleaseTimeout(rb.cfg)
+	curTime := time.Now()
+	endTimeInt := curTime.Add(time.Hour).UnixNano()
+	startTimeInt := curTime.Add(-ttl).UnixNano()
+
+	// Filter out tickets that are fetched but not assigned within ttl time (ms).
+	idsInPendingReleases, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", proposedTicketIDs, startTimeInt, endTimeInt))
+	if err != nil {
+		handleConnectionClose(&redisConn)
+		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
+	}
+
+	idsInPendingReleasesSet := make(map[string]struct{}, len(idsInPendingReleases))
+	for _, id := range idsInPendingReleases {
+		idsInPendingReleasesSet[id] = struct{}{}
+	}
+
+	return func(yield func(map[string]struct{}, error) bool) {
+		defer handleConnectionClose(&redisConn)
+
+		batchSize := getIndexedTicketBatchSize(rb.cfg)
+
+		lastScoreCount := 0
+		lastScore := curTime.UnixNano()
+
+		remaining := queryLimit
+		if remaining == 0 {
+			// for continuous streaming, canellable only if ctx is cancelled
+			remaining = math.MaxInt
+		}
+
+		for remaining > 0 {
+			select {
+			case <-ctx.Done():
+				yield(nil, ctx.Err())
+				return
+			default:
+			}
+
+			batchLimit := min(batchSize, remaining)
+
+			indexedIds, err := redis.Strings(redisConn.Do(
+				"ZRANGEBYSCORE", allTicketsWithTTL, fmt.Sprintf("(%d", lastScore), "+inf",
+				"WITHSCORES", "LIMIT", lastScoreCount, batchLimit,
+			))
+			if err != nil {
+				err = status.Errorf(codes.Internal, "ZRANGEBYSCORE failed: %v", err)
+				yield(nil, err)
+				break
+			}
+
+			if len(indexedIds) == 0 {
+				yield(nil, nil)
+				break
+			}
+
+			results := make(map[string]struct{}, len(indexedIds)/2)
+
+			// indexedIds is [id1, score1, id2, score2, ...]
+			for i := 0; i < len(indexedIds); i += 2 {
+				id := indexedIds[i]
+
+				if _, exists := idsInPendingReleasesSet[id]; !exists {
+					results[id] = struct{}{}
+				}
+
+				// Track last score, we can just log the errors
+				score, err := strconv.ParseInt(indexedIds[i+1], 10, 64)
+				if err != nil {
+					logger.WithError(err).Error("error parsing ticket score")
+				}
+
+				if score > lastScore {
+					lastScore = score
+					lastScoreCount = 0
+				} else if score == lastScore {
+					lastScoreCount++
+				}
+			}
+
+			if !yield(results, nil) {
+				break
+			}
+
+			remaining -= len(results)
+		}
+	}, nil
 }
 
 // GetIndexedTicketCount retrieves the current ticket count
@@ -827,6 +925,7 @@ func getAssignedDeleteTimeout(cfg config.View) time.Duration {
 
 	return cfg.GetDuration(name)
 }
+
 func getTicketReleaseTimeout(cfg config.View) time.Duration {
 	const (
 		name = "ticketDeleteTimeout"
@@ -839,4 +938,18 @@ func getTicketReleaseTimeout(cfg config.View) time.Duration {
 	}
 
 	return cfg.GetDuration(name)
+}
+
+func getIndexedTicketBatchSize(cfg config.View) int {
+	const (
+		name = "indexedTicketBatchSize"
+		// Default batch size to query indexed ticket by if not configured
+		defaultIndexedTicketBatchSize = 5000
+	)
+
+	if !cfg.IsSet(name) {
+		return defaultIndexedTicketBatchSize
+	}
+
+	return cfg.GetInt(name)
 }

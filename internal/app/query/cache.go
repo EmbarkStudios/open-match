@@ -16,12 +16,12 @@ package query
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"sync"
 	"time"
 
 	"go.opencensus.io/stats"
 
-	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"open-match.dev/open-match/internal/appmain"
@@ -42,7 +42,7 @@ type cache struct {
 	// Multithreaded unsafe fields, only to be written by update, and read when
 	// request given the ok.
 	value  interface{}
-	update func(statestore.Service, interface{}) error
+	update func(statestore.Service, interface{}, int) error
 	err    error
 }
 
@@ -51,7 +51,7 @@ type cacheRequest struct {
 	runNow chan struct{}
 }
 
-func (c *cache) request(ctx context.Context, f func(interface{})) error {
+func (c *cache) request(ctx context.Context, f func(interface{}), queryLimit int) error {
 	cr := &cacheRequest{
 		ctx:    ctx,
 		runNow: make(chan struct{}),
@@ -63,7 +63,7 @@ sendRequest:
 		case <-ctx.Done():
 			return errors.Wrap(ctx.Err(), "cache request canceled before request sent.")
 		case <-c.startRunRequest:
-			go c.runRequest()
+			go c.runRequest(queryLimit)
 		case c.requests <- cr:
 			break sendRequest
 		}
@@ -84,7 +84,7 @@ sendRequest:
 	return nil
 }
 
-func (c *cache) runRequest() {
+func (c *cache) runRequest(queryLimit int) {
 	defer func() {
 		c.startRunRequest <- struct{}{}
 	}()
@@ -103,7 +103,7 @@ collectAllWaiting:
 		}
 	}
 
-	c.err = c.update(c.store, c.value)
+	c.err = c.update(c.store, c.value, queryLimit)
 	stats.Record(context.Background(), cacheWaitingQueries.M(int64(len(reqs))))
 
 	// Send WaitGroup to query calls, letting them run their query on the cache.
@@ -125,7 +125,7 @@ func newTicketCache(b *appmain.Bindings, store statestore.Service) *cache {
 		store:           store,
 		requests:        make(chan *cacheRequest),
 		startRunRequest: make(chan struct{}, 1),
-		value:           make(map[string]*pb.Ticket),
+		value:           make(map[string]*pb.Ticket, 200_000),
 		update:          updateTicketCache,
 	}
 
@@ -135,7 +135,7 @@ func newTicketCache(b *appmain.Bindings, store statestore.Service) *cache {
 	return c
 }
 
-func updateTicketCache(store statestore.Service, value interface{}) error {
+func updateTicketCache(store statestore.Service, value interface{}, queryLimit int) error {
 	if value == nil {
 		return status.Error(codes.InvalidArgument, "value is required")
 	}
@@ -145,45 +145,57 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 		return status.Errorf(codes.InvalidArgument, "expecting value type map[string]*pb.Ticket, but got: %T", value)
 	}
 
-	t := time.Now()
-	previousCount := len(tickets)
-	// get all indexed tickets within the valid time window
-	currentAll, err := store.GetIndexedIDSetWithTTL(context.Background())
+	var (
+		t             = time.Now()
+		previousCount = len(tickets)
+		deletedCount  = 0
+		currentAll    = 0
+		totalToFetch  = 0
+	)
+
+	// specifying a batch size of 0, means the default configured batch size will be used
+	indexedTickets, err := store.StreamIndexedIDSet(context.Background(), queryLimit)
 	if err != nil {
 		return err
 	}
 
-	deletedCount := 0
-	for id := range tickets {
-		if _, ok := currentAll[id]; !ok {
-			delete(tickets, id)
-			deletedCount++
+	// stream the results back
+	for currentBatch := range indexedTickets {
+		for id := range tickets {
+			if _, ok := currentBatch[id]; !ok {
+				delete(tickets, id)
+				deletedCount++
+			}
 		}
-	}
 
-	toFetch := []string{}
-	for id := range currentAll {
-		if _, ok := tickets[id]; !ok {
-			toFetch = append(toFetch, id)
+		toFetch := []string{}
+		for id := range currentBatch {
+			if _, ok := tickets[id]; !ok {
+				toFetch = append(toFetch, id)
+			}
 		}
-	}
 
-	newTickets, err := store.GetTickets(context.Background(), toFetch)
-	if err != nil {
-		return err
-	}
+		// get in smaller batches for faster operations
+		newTickets, err := store.GetTickets(context.Background(), toFetch)
+		if err != nil {
+			return err
+		}
 
-	for _, t := range newTickets {
-		tickets[t.Id] = t
+		for _, t := range newTickets {
+			tickets[t.Id] = t
+		}
+
+		currentAll += len(currentBatch)
+		totalToFetch += len(toFetch)
 	}
 
 	stats.Record(context.Background(), cacheTotalItems.M(int64(previousCount)))
-	stats.Record(context.Background(), totalActiveTickets.M(int64(len(currentAll))))
-	stats.Record(context.Background(), cacheFetchedItems.M(int64(len(toFetch))))
+	stats.Record(context.Background(), totalActiveTickets.M(int64(currentAll)))
+	stats.Record(context.Background(), cacheFetchedItems.M(int64(totalToFetch)))
 	stats.Record(context.Background(), cacheUpdateLatency.M(float64(time.Since(t))/float64(time.Millisecond)))
-	stats.Record(context.Background(), totalPendingTickets.M(int64(len(toFetch))))
+	stats.Record(context.Background(), totalPendingTickets.M(int64(totalToFetch)))
 
-	logger.Debugf("Ticket Cache update: Previous %d, Deleted %d, Fetched %d, Current %d", previousCount, deletedCount, len(toFetch), len(tickets))
+	logger.Debugf("Ticket Cache update: Previous %d, Deleted %d, Fetched %d, Current %d", previousCount, deletedCount, totalToFetch, len(tickets))
 	return nil
 }
 
@@ -192,7 +204,7 @@ func newBackfillCache(b *appmain.Bindings, store statestore.Service) *cache {
 		store:           store,
 		requests:        make(chan *cacheRequest),
 		startRunRequest: make(chan struct{}, 1),
-		value:           make(map[string]*pb.Backfill),
+		value:           make(map[string]*pb.Backfill, 50_000),
 		update:          updateBackfillCache,
 	}
 
@@ -202,7 +214,7 @@ func newBackfillCache(b *appmain.Bindings, store statestore.Service) *cache {
 	return c
 }
 
-func updateBackfillCache(store statestore.Service, value interface{}) error {
+func updateBackfillCache(store statestore.Service, value interface{}, _ int) error {
 	if value == nil {
 		return status.Error(codes.InvalidArgument, "value is required")
 	}

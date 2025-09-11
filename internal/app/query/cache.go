@@ -125,7 +125,7 @@ func newTicketCache(b *appmain.Bindings, store statestore.Service) *cache {
 		store:           store,
 		requests:        make(chan *cacheRequest),
 		startRunRequest: make(chan struct{}, 1),
-		value:           make(map[string]*pb.Ticket),
+		value:           make(map[string]*pb.Ticket, 100_000),
 		update:          updateTicketCache,
 	}
 
@@ -147,7 +147,8 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 
 	t := time.Now()
 	previousCount := len(tickets)
-	currentAll, err := store.GetIndexedIDSet(context.Background())
+	// get all indexed tickets within the valid time window
+	currentAll, err := store.GetIndexedIDSetWithTTL(context.Background())
 	if err != nil {
 		return err
 	}
@@ -191,7 +192,7 @@ func newBackfillCache(b *appmain.Bindings, store statestore.Service) *cache {
 		store:           store,
 		requests:        make(chan *cacheRequest),
 		startRunRequest: make(chan struct{}, 1),
-		value:           make(map[string]*pb.Backfill),
+		value:           make(map[string]*pb.Backfill, 50_000),
 		update:          updateBackfillCache,
 	}
 

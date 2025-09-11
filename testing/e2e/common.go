@@ -174,6 +174,7 @@ pendingReleaseTimeout: 1s
 assignedDeleteTimeout: 200ms
 queryPageSize: 10
 backfillLockTimeout: 1m
+ticketDeleteTimeout: 1m
 
 logging:
   level: debug

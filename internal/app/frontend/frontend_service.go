@@ -486,3 +486,15 @@ func (s *frontendService) GetIndexedTicketCount(ctx context.Context, _ *pb.GetIn
 
 	return resp, nil
 }
+func (s *frontendService) GetExpiredTickets(ctx context.Context, req *pb.GetExpiredTicketsRequest) (*pb.GetExpiredTicketsResponse, error) {
+	expiredTicketIds, err := s.store.GetExpiredTicketIDs(ctx, int(req.GetLimit()))
+	if err != nil {
+		return nil, err
+	}
+
+	response := &pb.GetExpiredTicketsResponse{
+		Ids: expiredTicketIds,
+	}
+
+	return response, nil
+}

@@ -1242,7 +1242,7 @@ func TestGetExpiredTicketIDs(t *testing.T) {
 	require.NotNil(t, ticketActual)
 
 	// no tickets expired yet
-	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 0)
 
@@ -1250,7 +1250,7 @@ func TestGetExpiredTicketIDs(t *testing.T) {
 	time.Sleep(getTicketReleaseTimeout(cfg) + 500*time.Millisecond)
 
 	// there should be an expired ticket
-	expiredTicketIDs, err = service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err = service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 1)
 
@@ -1307,7 +1307,7 @@ func TestCleanupTickets(t *testing.T) {
 	require.NotNil(t, ticketActual)
 
 	// no tickets expired yet
-	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 0)
 
@@ -1350,10 +1350,10 @@ func TestStreamIndexedIDSet(t *testing.T) {
 
 	_, ids := generateTickets(ctx, t, service, 1000)
 
-	ticketIdStream, err := service.StreamIndexedIDSet(ctx, 800)
+	ticketIdStream, err := service.StreamIndexedIDSet(ctx)
 	require.NoError(t, err)
 
-	collectedTickets := make([]string, 0, 800)
+	collectedTickets := make([]string, 0, 1000)
 	for ticketSet, err := range ticketIdStream {
 		require.NoError(t, err)
 		for id := range ticketSet {
@@ -1361,10 +1361,8 @@ func TestStreamIndexedIDSet(t *testing.T) {
 		}
 	}
 
-	require.Len(t, collectedTickets, 800)
-	for _, id := range collectedTickets {
-		require.Contains(t, ids, id)
-	}
+	require.Len(t, collectedTickets, 1000)
+	require.ElementsMatch(t, collectedTickets, ids)
 }
 
 func testConnect(t *testing.T, withSentinel bool, withPassword string) {

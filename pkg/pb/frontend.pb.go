@@ -690,6 +690,96 @@ func (x *GetIndexedTicketCountResponse) GetCount() int32 {
 	return 0
 }
 
+type GetExpiredTicketsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The number of ticket Ids to limit the query on. If not specified, will default to querying all
+	Limit         int32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExpiredTicketsRequest) Reset() {
+	*x = GetExpiredTicketsRequest{}
+	mi := &file_api_frontend_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExpiredTicketsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExpiredTicketsRequest) ProtoMessage() {}
+
+func (x *GetExpiredTicketsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_frontend_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExpiredTicketsRequest.ProtoReflect.Descriptor instead.
+func (*GetExpiredTicketsRequest) Descriptor() ([]byte, []int) {
+	return file_api_frontend_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetExpiredTicketsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type GetExpiredTicketsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// TicketIDs that meet all the filtering criteria requested by the pool.
+	Ids           []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetExpiredTicketsResponse) Reset() {
+	*x = GetExpiredTicketsResponse{}
+	mi := &file_api_frontend_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetExpiredTicketsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetExpiredTicketsResponse) ProtoMessage() {}
+
+func (x *GetExpiredTicketsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_frontend_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetExpiredTicketsResponse.ProtoReflect.Descriptor instead.
+func (*GetExpiredTicketsResponse) Descriptor() ([]byte, []int) {
+	return file_api_frontend_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetExpiredTicketsResponse) GetIds() []string {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
 var File_api_frontend_proto protoreflect.FileDescriptor
 
 const file_api_frontend_proto_rawDesc = "" +
@@ -731,7 +821,11 @@ const file_api_frontend_proto_rawDesc = "" +
 	"ticket_ids\x18\x01 \x03(\tR\tticketIds\"\x1e\n" +
 	"\x1cGetIndexedTicketCountRequest\"5\n" +
 	"\x1dGetIndexedTicketCountResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count2\xa0\f\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"0\n" +
+	"\x18GetExpiredTicketsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"-\n" +
+	"\x19GetExpiredTicketsResponse\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids2\xae\r\n" +
 	"\x0fFrontendService\x12i\n" +
 	"\fCreateTicket\x12\x1e.openmatch.CreateTicketRequest\x1a\x11.openmatch.Ticket\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/frontendservice/tickets\x12w\n" +
 	"\fDeleteTicket\x12\x1e.openmatch.DeleteTicketRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02)*'/v1/frontendservice/tickets/{ticket_id}\x12l\n" +
@@ -744,7 +838,8 @@ const file_api_frontend_proto_rawDesc = "" +
 	"\x0eUpdateBackfill\x12 .openmatch.UpdateBackfillRequest\x1a\x13.openmatch.Backfill\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/v1/frontendservice/backfills\x12\x8c\x01\n" +
 	"\x12GetBackfillTickets\x12\x1d.openmatch.GetBackfillRequest\x1a\x1a.openmatch.BackfillTickets\";\x82\xd3\xe4\x93\x025\x123/v1/frontendservice/backfills/{backfill_id}/tickets\x12m\n" +
 	"\rDeleteTickets\x12\x1f.openmatch.DeleteTicketsRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/v1/frontendservice/tickets\x12\x95\x01\n" +
-	"\x15GetIndexedTicketCount\x12'.openmatch.GetIndexedTicketCountRequest\x1a(.openmatch.GetIndexedTicketCountResponse\")\x82\xd3\xe4\x93\x02#\x12!/v1/frontendservice/tickets/countB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
+	"\x15GetIndexedTicketCount\x12'.openmatch.GetIndexedTicketCountRequest\x1a(.openmatch.GetIndexedTicketCountResponse\")\x82\xd3\xe4\x93\x02#\x12!/v1/frontendservice/tickets/count\x12\x8b\x01\n" +
+	"\x11GetExpiredTickets\x12#.openmatch.GetExpiredTicketsRequest\x1a$.openmatch.GetExpiredTicketsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/frontendservice/tickets/expiredB\x8b\x03\x92A\xd9\x02\x12\xb2\x01\n" +
 	"\bFrontend\"I\n" +
 	"\n" +
 	"Open Match\x12\x16https://open-match.dev\x1a#open-match-discuss@googlegroups.com*V\n" +
@@ -766,7 +861,7 @@ func file_api_frontend_proto_rawDescGZIP() []byte {
 	return file_api_frontend_proto_rawDescData
 }
 
-var file_api_frontend_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_api_frontend_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_api_frontend_proto_goTypes = []any{
 	(*CreateTicketRequest)(nil),           // 0: openmatch.CreateTicketRequest
 	(*DeleteTicketRequest)(nil),           // 1: openmatch.DeleteTicketRequest
@@ -782,20 +877,22 @@ var file_api_frontend_proto_goTypes = []any{
 	(*DeleteTicketsRequest)(nil),          // 11: openmatch.DeleteTicketsRequest
 	(*GetIndexedTicketCountRequest)(nil),  // 12: openmatch.GetIndexedTicketCountRequest
 	(*GetIndexedTicketCountResponse)(nil), // 13: openmatch.GetIndexedTicketCountResponse
-	(*Ticket)(nil),                        // 14: openmatch.Ticket
-	(*Assignment)(nil),                    // 15: openmatch.Assignment
-	(*Backfill)(nil),                      // 16: openmatch.Backfill
-	(*emptypb.Empty)(nil),                 // 17: google.protobuf.Empty
-	(*BackfillTickets)(nil),               // 18: openmatch.BackfillTickets
+	(*GetExpiredTicketsRequest)(nil),      // 14: openmatch.GetExpiredTicketsRequest
+	(*GetExpiredTicketsResponse)(nil),     // 15: openmatch.GetExpiredTicketsResponse
+	(*Ticket)(nil),                        // 16: openmatch.Ticket
+	(*Assignment)(nil),                    // 17: openmatch.Assignment
+	(*Backfill)(nil),                      // 18: openmatch.Backfill
+	(*emptypb.Empty)(nil),                 // 19: google.protobuf.Empty
+	(*BackfillTickets)(nil),               // 20: openmatch.BackfillTickets
 }
 var file_api_frontend_proto_depIdxs = []int32{
-	14, // 0: openmatch.CreateTicketRequest.ticket:type_name -> openmatch.Ticket
-	15, // 1: openmatch.WatchAssignmentsResponse.assignment:type_name -> openmatch.Assignment
-	15, // 2: openmatch.AcknowledgeBackfillRequest.assignment:type_name -> openmatch.Assignment
-	16, // 3: openmatch.AcknowledgeBackfillResponse.backfill:type_name -> openmatch.Backfill
-	14, // 4: openmatch.AcknowledgeBackfillResponse.tickets:type_name -> openmatch.Ticket
-	16, // 5: openmatch.CreateBackfillRequest.backfill:type_name -> openmatch.Backfill
-	16, // 6: openmatch.UpdateBackfillRequest.backfill:type_name -> openmatch.Backfill
+	16, // 0: openmatch.CreateTicketRequest.ticket:type_name -> openmatch.Ticket
+	17, // 1: openmatch.WatchAssignmentsResponse.assignment:type_name -> openmatch.Assignment
+	17, // 2: openmatch.AcknowledgeBackfillRequest.assignment:type_name -> openmatch.Assignment
+	18, // 3: openmatch.AcknowledgeBackfillResponse.backfill:type_name -> openmatch.Backfill
+	16, // 4: openmatch.AcknowledgeBackfillResponse.tickets:type_name -> openmatch.Ticket
+	18, // 5: openmatch.CreateBackfillRequest.backfill:type_name -> openmatch.Backfill
+	18, // 6: openmatch.UpdateBackfillRequest.backfill:type_name -> openmatch.Backfill
 	0,  // 7: openmatch.FrontendService.CreateTicket:input_type -> openmatch.CreateTicketRequest
 	1,  // 8: openmatch.FrontendService.DeleteTicket:input_type -> openmatch.DeleteTicketRequest
 	2,  // 9: openmatch.FrontendService.GetTicket:input_type -> openmatch.GetTicketRequest
@@ -808,20 +905,22 @@ var file_api_frontend_proto_depIdxs = []int32{
 	9,  // 16: openmatch.FrontendService.GetBackfillTickets:input_type -> openmatch.GetBackfillRequest
 	11, // 17: openmatch.FrontendService.DeleteTickets:input_type -> openmatch.DeleteTicketsRequest
 	12, // 18: openmatch.FrontendService.GetIndexedTicketCount:input_type -> openmatch.GetIndexedTicketCountRequest
-	14, // 19: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
-	17, // 20: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
-	14, // 21: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
-	4,  // 22: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
-	6,  // 23: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
-	16, // 24: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
-	17, // 25: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
-	16, // 26: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
-	16, // 27: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
-	18, // 28: openmatch.FrontendService.GetBackfillTickets:output_type -> openmatch.BackfillTickets
-	17, // 29: openmatch.FrontendService.DeleteTickets:output_type -> google.protobuf.Empty
-	13, // 30: openmatch.FrontendService.GetIndexedTicketCount:output_type -> openmatch.GetIndexedTicketCountResponse
-	19, // [19:31] is the sub-list for method output_type
-	7,  // [7:19] is the sub-list for method input_type
+	14, // 19: openmatch.FrontendService.GetExpiredTickets:input_type -> openmatch.GetExpiredTicketsRequest
+	16, // 20: openmatch.FrontendService.CreateTicket:output_type -> openmatch.Ticket
+	19, // 21: openmatch.FrontendService.DeleteTicket:output_type -> google.protobuf.Empty
+	16, // 22: openmatch.FrontendService.GetTicket:output_type -> openmatch.Ticket
+	4,  // 23: openmatch.FrontendService.WatchAssignments:output_type -> openmatch.WatchAssignmentsResponse
+	6,  // 24: openmatch.FrontendService.AcknowledgeBackfill:output_type -> openmatch.AcknowledgeBackfillResponse
+	18, // 25: openmatch.FrontendService.CreateBackfill:output_type -> openmatch.Backfill
+	19, // 26: openmatch.FrontendService.DeleteBackfill:output_type -> google.protobuf.Empty
+	18, // 27: openmatch.FrontendService.GetBackfill:output_type -> openmatch.Backfill
+	18, // 28: openmatch.FrontendService.UpdateBackfill:output_type -> openmatch.Backfill
+	20, // 29: openmatch.FrontendService.GetBackfillTickets:output_type -> openmatch.BackfillTickets
+	19, // 30: openmatch.FrontendService.DeleteTickets:output_type -> google.protobuf.Empty
+	13, // 31: openmatch.FrontendService.GetIndexedTicketCount:output_type -> openmatch.GetIndexedTicketCountResponse
+	15, // 32: openmatch.FrontendService.GetExpiredTickets:output_type -> openmatch.GetExpiredTicketsResponse
+	20, // [20:33] is the sub-list for method output_type
+	7,  // [7:20] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -839,7 +938,7 @@ func file_api_frontend_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_frontend_proto_rawDesc), len(file_api_frontend_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

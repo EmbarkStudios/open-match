@@ -384,6 +384,46 @@
         ]
       }
     },
+    "/v1/frontendservice/tickets/expired": {
+      "get": {
+        "summary": "GetExpiredTickets returns the expired ticket Ids",
+        "operationId": "FrontendService_GetExpiredTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/openmatchGetExpiredTicketsResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "The number of ticket Ids to limit the query on. If not specified, will default to querying all",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "FrontendService"
+        ]
+      }
+    },
     "/v1/frontendservice/tickets/{ticket_id}": {
       "get": {
         "summary": "GetTicket get the Ticket associated with the specified TicketId.",
@@ -628,6 +668,18 @@
         "ticket": {
           "$ref": "#/definitions/openmatchTicket",
           "description": "A Ticket object with SearchFields defined."
+        }
+      }
+    },
+    "openmatchGetExpiredTicketsResponse": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "TicketIDs that meet all the filtering criteria requested by the pool."
         }
       }
     },

@@ -137,11 +137,20 @@ message DeleteTicketsRequest {
 }
 
 message GetIndexedTicketCountRequest{
-
 }
 
 message GetIndexedTicketCountResponse{
   int32 count =1;
+}
+
+message GetExpiredTicketsRequest {
+  // The number of ticket Ids to limit the query on. If not specified, will default to querying all
+  int32 limit = 1;
+}
+
+message GetExpiredTicketsResponse {
+  // TicketIDs that meet all the filtering criteria requested by the pool.
+  repeated string ids = 1;
 }
 
 // The FrontendService implements APIs to manage and query status of a Tickets.
@@ -253,6 +262,13 @@ service FrontendService {
   rpc GetIndexedTicketCount(GetIndexedTicketCountRequest) returns (GetIndexedTicketCountResponse) {
     option (google.api.http) = {
       get: "/v1/frontendservice/tickets/count"
+    };
+  }
+
+  // GetExpiredTickets returns the expired ticket Ids
+  rpc GetExpiredTickets(GetExpiredTicketsRequest) returns (GetExpiredTicketsResponse) {
+    option (google.api.http) = {
+      get: "/v1/frontendservice/tickets/expired"
     };
   }
 }

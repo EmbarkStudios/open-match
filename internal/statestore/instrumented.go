@@ -233,10 +233,10 @@ func (is *instrumentedService) DeleteTicketCompletely(ctx context.Context, id st
 }
 
 // GetExpiredTicketIDs gets all ticket IDs which are expired
-func (is *instrumentedService) GetExpiredTicketIDs(ctx context.Context) ([]string, error) {
+func (is *instrumentedService) GetExpiredTicketIDs(ctx context.Context, queryLimit int) ([]string, error) {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetExpiredTicketIDs")
 	defer span.End()
-	return is.s.GetExpiredTicketIDs(ctx)
+	return is.s.GetExpiredTicketIDs(ctx, queryLimit)
 }
 
 // GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
@@ -247,8 +247,8 @@ func (is *instrumentedService) GetIndexedIDSetWithTTL(ctx context.Context) (map[
 }
 
 // StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
-func (is *instrumentedService) StreamIndexedIDSet(ctx context.Context, batchSize int) (iter.Seq2[map[string]struct{}, error], error) {
+func (is *instrumentedService) StreamIndexedIDSet(ctx context.Context) (iter.Seq2[map[string]struct{}, error], error) {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.StreamIndexedIDSet")
 	defer span.End()
-	return is.s.StreamIndexedIDSet(ctx, batchSize)
+	return is.s.StreamIndexedIDSet(ctx)
 }

@@ -136,13 +136,13 @@ type Service interface {
 	DeleteTicketCompletely(ctx context.Context, id string) error
 
 	// GetExpiredTicketIDs gets all ticket IDs which are expired
-	GetExpiredTicketIDs(ctx context.Context) ([]string, error)
+	GetExpiredTicketIDs(ctx context.Context, queryLimit int) ([]string, error)
 
 	// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
 	GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error)
 
 	// StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
-	StreamIndexedIDSet(ctx context.Context, queryLimit int) (iter.Seq2[map[string]struct{}, error], error)
+	StreamIndexedIDSet(ctx context.Context) (iter.Seq2[map[string]struct{}, error], error)
 }
 
 // New creates a Service based on the configuration.

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"iter"
-	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -398,10 +397,10 @@ func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]
 }
 
 // StreamIndexedIDSet returns an iter that streams ticketIds in the configured batch Size
-func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) (iter.Seq2[map[string]struct{}, error], error) {
+func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context) (iter.Seq2[map[string]struct{}, error], error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "GetIndexedIDSetWithTTL, failed to connect to redis: %v", err)
+		return nil, status.Errorf(codes.Unavailable, "StreamIndexedIDSet, failed to connect to redis: %v", err)
 	}
 
 	ttl := getBackfillReleaseTimeout(rb.cfg)
@@ -424,18 +423,11 @@ func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) 
 	return func(yield func(map[string]struct{}, error) bool) {
 		defer handleConnectionClose(&redisConn)
 
-		batchSize := getIndexedTicketBatchSize(rb.cfg)
-
 		lastScoreCount := 0
 		lastScore := curTime.UnixNano()
+		batchSize := getIndexedTicketBatchSize(rb.cfg)
 
-		remaining := queryLimit
-		if remaining == 0 {
-			// for continuous streaming, canellable only if ctx is cancelled
-			remaining = math.MaxInt
-		}
-
-		for remaining > 0 {
+		for {
 			select {
 			case <-ctx.Done():
 				yield(nil, ctx.Err())
@@ -443,26 +435,22 @@ func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) 
 			default:
 			}
 
-			batchLimit := min(batchSize, remaining)
-
 			indexedIds, err := redis.Strings(redisConn.Do(
-				"ZRANGEBYSCORE", allTicketsWithTTL, fmt.Sprintf("(%d", lastScore), "+inf",
-				"WITHSCORES", "LIMIT", lastScoreCount, batchLimit,
+				"ZRANGEBYSCORE", allTicketsWithTTL, lastScore, "+inf",
+				"WITHSCORES", "LIMIT", lastScoreCount, batchSize,
 			))
 			if err != nil {
-				err = status.Errorf(codes.Internal, "ZRANGEBYSCORE failed: %v", err)
-				yield(nil, err)
+				yield(nil, status.Errorf(codes.Internal, "ZRANGEBYSCORE failed: %v", err))
 				break
 			}
 
 			if len(indexedIds) == 0 {
-				yield(nil, nil)
 				break
 			}
 
 			results := make(map[string]struct{}, len(indexedIds)/2)
 
-			// indexedIds is [id1, score1, id2, score2, ...]
+			// indexedIds formatted as [id1, score1, id2, score2, ...]
 			for i := 0; i < len(indexedIds); i += 2 {
 				id := indexedIds[i]
 
@@ -478,7 +466,7 @@ func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) 
 
 				if score > lastScore {
 					lastScore = score
-					lastScoreCount = 0
+					lastScoreCount = 1 // we just consumed the first at this new score
 				} else if score == lastScore {
 					lastScoreCount++
 				}
@@ -487,8 +475,6 @@ func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context, queryLimit int) 
 			if !yield(results, nil) {
 				break
 			}
-
-			remaining -= len(results)
 		}
 	}, nil
 }
@@ -793,8 +779,8 @@ func (rb *redisBackend) newConstantBackoffStrategy() backoff.BackOff {
 	return backoff.BackOff(backoffStrat)
 }
 
-// GetExpiredTicketIDs gets all ticket IDs which are expired
-func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context) ([]string, error) {
+// GetExpiredTicketIDs gets all ticket IDs which are expired with an optional limit
+func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context, queryLimit int) ([]string, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "GetExpiredBackfillIDs, failed to connect to redis: %v", err)
@@ -802,12 +788,17 @@ func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context) ([]string, erro
 	defer handleConnectionClose(&redisConn)
 
 	ticketTTL := getTicketReleaseTimeout(rb.cfg)
-	curTime := time.Now()
-	endTimeInt := curTime.Add(-ticketTTL).UnixNano() // anything before the now - ttl
-	startTimeInt := 0                                // unix epoc start time
+	endTimeInt := time.Now().Add(-ticketTTL).UnixNano() // anything before the now - ttl
+	startTimeInt := 0                                   // unix epoc start time
+
+	// Default to "no limit" if queryLimit == 0.
+	args := redis.Args{allTicketsWithTTL, startTimeInt, endTimeInt}
+	if queryLimit > 0 {
+		args = args.Add("LIMIT", 0, queryLimit)
+	}
 
 	// Filter out ticket IDs that are fetched but not assigned within TTL time (ms).
-	expiredTicketIds, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", allTicketsWithTTL, startTimeInt, endTimeInt))
+	expiredTicketIds, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", args...))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting expired tickets %v", err)
 	}
@@ -876,7 +867,7 @@ func (rb *redisBackend) cleanupTicketsWorker(ctx context.Context, ticketIDsCh <-
 }
 
 func (rb *redisBackend) CleanupTickets(ctx context.Context) error {
-	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx, 0)
 	if err != nil {
 		return err
 	}

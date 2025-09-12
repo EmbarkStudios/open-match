@@ -28,6 +28,10 @@ import (
 type FakeFrontend struct {
 }
 
+func (s *FakeFrontend) GetExpiredTickets(ctx context.Context, request *pb.GetExpiredTicketsRequest) (*pb.GetExpiredTicketsResponse, error) {
+	return &pb.GetExpiredTicketsResponse{}, nil
+}
+
 func (s *FakeFrontend) GetIndexedTicketCount(ctx context.Context, request *pb.GetIndexedTicketCountRequest) (*pb.GetIndexedTicketCountResponse, error) {
 	return &pb.GetIndexedTicketCountResponse{}, nil
 }

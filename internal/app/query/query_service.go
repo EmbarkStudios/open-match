@@ -15,11 +15,9 @@
 package query
 
 import (
-	"go.opencensus.io/stats"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opencensus.io/stats"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"open-match.dev/open-match/internal/config"
@@ -54,41 +52,32 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		return err
 	}
 
-	start := time.Now()
+	//reqLimit := int(req.GetLimit())
 	var results []*pb.Ticket
 	err = s.tc.request(ctx, func(value interface{}) {
-		start := time.Now()
 		tickets, ok := value.(map[string]*pb.Ticket)
 		if !ok {
 			logger.Errorf("expecting value type map[string]*pb.Ticket, but got: %T", value)
 			return
 		}
-		logger.WithFields(logrus.Fields{
-			"duration": time.Since(start),
-		}).Infoln("query tickets unmarshalling cache")
 
-		start = time.Now()
 		for _, ticket := range tickets {
 			if pf.In(ticket) {
 				results = append(results, ticket)
 			}
+
+			//if reqLimit > 0 && len(results) >= reqLimit {
+			//	break
+			//}
 		}
 
-		logger.WithFields(logrus.Fields{
-			"duration": time.Since(start),
-		}).Infoln("query tickets")
-	}, int(req.GetLimit()))
+	})
 	if err != nil {
 		err = errors.Wrap(err, "QueryTickets: failed to run request")
 		return err
 	}
 	stats.Record(ctx, ticketsPerQuery.M(int64(len(results))))
 
-	logger.WithFields(logrus.Fields{
-		"duration": time.Since(start),
-	}).Infoln("query tickets from cache")
-
-	start = time.Now()
 	pSize := getPageSize(s.cfg)
 	for start := 0; start < len(results); start += pSize {
 		end := start + pSize
@@ -103,10 +92,6 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 			return err
 		}
 	}
-
-	logger.WithFields(logrus.Fields{
-		"duration": time.Since(start),
-	}).Infoln("query tickets pager")
 
 	return nil
 }
@@ -123,6 +108,7 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 		return err
 	}
 
+	//reqLimit := int(req.GetLimit())
 	var results []string
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
@@ -135,8 +121,12 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 			if pf.In(ticket) {
 				results = append(results, id)
 			}
+
+			//if reqLimit > 0 && len(results) >= reqLimit {
+			//	break
+			//}
 		}
-	}, int(req.GetLimit()))
+	})
 	if err != nil {
 		err = errors.Wrap(err, "QueryTicketIds: failed to run request")
 		return err
@@ -186,7 +176,7 @@ func (s *queryService) QueryBackfills(req *pb.QueryBackfillsRequest, responseSer
 				results = append(results, backfill)
 			}
 		}
-	}, 0)
+	})
 	if err != nil {
 		err = errors.Wrap(err, "QueryBackfills: failed to run request")
 		return err

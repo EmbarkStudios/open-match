@@ -152,6 +152,8 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 		return err
 	}
 
+	logger.Infof("updateTicketCache: All indexed ids length: %d, fetch duration: %s", len(currentAll), time.Since(t))
+
 	deletedCount := 0
 	for id := range tickets {
 		if _, ok := currentAll[id]; !ok {
@@ -167,10 +169,15 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 		}
 	}
 
+	logger.Infof("updateTicketCache: Tickets to fetch length: %d", len(toFetch))
+
+	fetchTicketsStart := time.Now()
 	newTickets, err := store.GetTickets(context.Background(), toFetch)
 	if err != nil {
 		return err
 	}
+
+	logger.Infof("updateTicketCache: Tickets fetch duration: %s", time.Since(fetchTicketsStart))
 
 	for _, t := range newTickets {
 		tickets[t.Id] = t
@@ -182,7 +189,7 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 	stats.Record(context.Background(), cacheUpdateLatency.M(float64(time.Since(t))/float64(time.Millisecond)))
 	stats.Record(context.Background(), totalPendingTickets.M(int64(len(toFetch))))
 
-	logger.Debugf("Ticket Cache update: Previous %d, Deleted %d, Fetched %d, Current %d", previousCount, deletedCount, len(toFetch), len(tickets))
+	logger.Infof("updateTicketCache: Ticket Cache update: Previous %d, Deleted %d, Fetched %d, Current %d", previousCount, deletedCount, len(toFetch), len(tickets))
 	return nil
 }
 

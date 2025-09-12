@@ -15,6 +15,8 @@
 package query
 
 import (
+	"time"
+
 	"go.opencensus.io/stats"
 
 	"github.com/pkg/errors"
@@ -72,6 +74,14 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		return err
 	}
 	stats.Record(ctx, ticketsPerQuery.M(int64(len(results))))
+
+	sendStart := time.Now()
+	defer func() {
+		duration := time.Since(sendStart)
+		if duration > time.Millisecond*500 {
+			logger.Infof("QueryTickets: long send duration: %s, length: %d", duration, len(results))
+		}
+	}()
 
 	pSize := getPageSize(s.cfg)
 	for start := 0; start < len(results); start += pSize {

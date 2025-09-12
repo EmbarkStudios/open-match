@@ -71,6 +71,23 @@ func (rb *redisBackend) Close() error {
 func newRedis(cfg config.View) Service {
 	pool := GetRedisPool(cfg)
 	redsync = rs.New(rsredigo.NewPool(pool))
+
+	go func() {
+		redisLogger.Info("starting redis connection pool stats ticker")
+
+		ticker := time.NewTicker(time.Second * 10)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			stats := pool.Stats()
+			redisLogger.WithFields(logrus.Fields{
+				"active_count":  stats.ActiveCount,
+				"idle_count":    stats.IdleCount,
+				"wait_count":    stats.WaitCount,
+				"wait_duration": stats.WaitDuration,
+			}).Infof("redis connection pool stats")
+		}
+	}()
 	return &redisBackend{
 		healthCheckPool: getHealthCheckPool(cfg),
 		redisPool:       pool,

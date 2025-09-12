@@ -23,6 +23,7 @@ import (
 	"open-match.dev/open-match/internal/config"
 	"open-match.dev/open-match/internal/filter"
 	"open-match.dev/open-match/pkg/pb"
+	"time"
 )
 
 var (
@@ -52,7 +53,7 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		return err
 	}
 
-	//reqLimit := int(req.GetLimit())
+	reqLimit := int(req.GetLimit())
 	var results []*pb.Ticket
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
@@ -66,9 +67,9 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 				results = append(results, ticket)
 			}
 
-			//if reqLimit > 0 && len(results) >= reqLimit {
-			//	break
-			//}
+			if reqLimit > 0 && len(results) >= reqLimit {
+				break
+			}
 		}
 
 	})
@@ -77,6 +78,13 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		return err
 	}
 	stats.Record(ctx, ticketsPerQuery.M(int64(len(results))))
+	sendStart := time.Now()
+	defer func() {
+		duration := time.Since(sendStart)
+		if duration > time.Millisecond*500 {
+			logger.Infof("QueryTickets: long send duration: %s, length: %d", duration, len(results))
+		}
+	}()
 
 	pSize := getPageSize(s.cfg)
 	for start := 0; start < len(results); start += pSize {
@@ -108,7 +116,7 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 		return err
 	}
 
-	//reqLimit := int(req.GetLimit())
+	reqLimit := int(req.GetLimit())
 	var results []string
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
@@ -122,9 +130,9 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 				results = append(results, id)
 			}
 
-			//if reqLimit > 0 && len(results) >= reqLimit {
-			//	break
-			//}
+			if reqLimit > 0 && len(results) >= reqLimit {
+				break
+			}
 		}
 	})
 	if err != nil {

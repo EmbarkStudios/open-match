@@ -459,11 +459,12 @@ func (rb *redisBackend) StreamIndexedIDSet(ctx context.Context) (iter.Seq2[map[s
 				}
 
 				// Track last score, we can just log the errors
-				score, err := strconv.ParseInt(indexedIds[i+1], 10, 64)
+				scoreFloat, err := strconv.ParseFloat(indexedIds[i+1], 64)
 				if err != nil {
 					logger.WithError(err).Error("error parsing ticket score")
 				}
 
+				score := int64(scoreFloat)
 				if score > lastScore {
 					lastScore = score
 					lastScoreCount = 1 // we just consumed the first at this new score
@@ -867,7 +868,7 @@ func (rb *redisBackend) cleanupTicketsWorker(ctx context.Context, ticketIDsCh <-
 }
 
 func (rb *redisBackend) CleanupTickets(ctx context.Context) error {
-	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx, 0)
+	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx, 1000)
 	if err != nil {
 		return err
 	}

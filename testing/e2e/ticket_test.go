@@ -698,3 +698,27 @@ func TestDeleteTickets(t *testing.T) {
 	require.NotNil(t, get)
 	require.Equal(t, t3.Id, get.Id)
 }
+
+func TestGetIndexedTicketCount(t *testing.T) {
+	om := newOM(t)
+	ctx := context.Background()
+
+	ids := make([]string, 0, 10)
+	for range 10 {
+		t1, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: &pb.Ticket{}})
+		require.NoError(t, err)
+		ids = append(ids, t1.Id)
+	}
+
+	reply, err := om.Frontend().GetIndexedTicketCount(ctx, &pb.GetIndexedTicketCountRequest{})
+	require.NoError(t, err)
+	require.Equal(t, len(ids), int(reply.Count))
+
+	toDeleteCount := 5
+	_, err = om.Frontend().DeleteTickets(ctx, &pb.DeleteTicketsRequest{TicketIds: ids[0:toDeleteCount]})
+	require.NoError(t, err)
+
+	reply, err = om.Frontend().GetIndexedTicketCount(ctx, &pb.GetIndexedTicketCountRequest{})
+	require.NoError(t, err)
+	require.Equal(t, len(ids)-toDeleteCount, int(reply.Count))
+}

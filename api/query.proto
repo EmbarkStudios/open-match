@@ -58,6 +58,9 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 message QueryTicketsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
+
+  // The limit on the number of results streamed back
+  int32 limit = 2;
 }
 
 message QueryTicketsResponse {
@@ -68,6 +71,9 @@ message QueryTicketsResponse {
 message QueryTicketIdsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
+
+  // The limit on the number of results streamed back
+  int32 limit = 2;
 }
 
 message QueryTicketIdsResponse {
@@ -80,6 +86,9 @@ message QueryTicketIdsResponse {
 message QueryBackfillsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
+
+  // The limit on the number of results streamed back
+  int32 limit = 2;
 }
 
 // BETA FEATURE WARNING:  This Request messages are not finalized and 

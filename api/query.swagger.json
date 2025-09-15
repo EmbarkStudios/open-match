@@ -317,6 +317,11 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The limit on the number of results streamed back"
         }
       },
       "description": "BETA FEATURE WARNING:  This Request messages are not finalized and \nstill subject to possible change or removal."
@@ -341,6 +346,11 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The limit on the number of results streamed back"
         }
       }
     },
@@ -362,6 +372,11 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The limit on the number of results streamed back"
         }
       }
     },

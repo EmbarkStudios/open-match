@@ -220,17 +220,60 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
 	}
 
-	idsIndexed, err := redis.Strings(redisConn.Do("SMEMBERS", allTickets))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+	batchSize, isSet := getIndexTicketBatchSize(rb.cfg)
+	if !isSet {
+		// fall back to the default implementation
+		idsIndexed, err := redis.Strings(redisConn.Do("SMEMBERS", allTickets))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+		}
+
+		r := make(map[string]struct{}, len(idsIndexed))
+		for _, id := range idsIndexed {
+			r[id] = struct{}{}
+		}
+		for _, id := range idsInPendingReleases {
+			delete(r, id)
+		}
+
+		return r, nil
 	}
 
-	r := make(map[string]struct{}, len(idsIndexed))
-	for _, id := range idsIndexed {
-		r[id] = struct{}{}
-	}
+	pending := make(map[string]struct{}, len(idsInPendingReleases))
 	for _, id := range idsInPendingReleases {
-		delete(r, id)
+		pending[id] = struct{}{}
+	}
+
+	r := make(map[string]struct{})
+	cursor := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, status.Error(codes.Internal, ctx.Err().Error())
+		default:
+		}
+
+		reply, err := redis.Values(redisConn.Do("SSCAN", allTickets, cursor, "COUNT", batchSize))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error scanning all indexed ticket ids %v", err)
+		}
+
+		var batch []string
+		_, err = redis.Scan(reply, &cursor, &batch)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error scanning batch %v", err)
+		}
+
+		for _, id := range batch {
+			if _, exists := pending[id]; !exists {
+				r[id] = struct{}{}
+			}
+		}
+
+		if cursor == 0 {
+			break
+		}
 	}
 
 	return r, nil

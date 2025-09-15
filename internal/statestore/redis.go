@@ -280,3 +280,16 @@ func getBackfillLockTimeout(cfg config.View) time.Duration {
 
 	return cfg.GetDuration(name)
 }
+
+func getIndexTicketBatchSize(cfg config.View) (int, bool) {
+	const (
+		name                        = "getIndexTicketBatchSize"
+		defaultIndexTicketBatchSize = 25000
+	)
+
+	if !cfg.IsSet(name) {
+		return defaultIndexTicketBatchSize, false
+	}
+
+	return cfg.GetInt(name), true
+}

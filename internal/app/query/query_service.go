@@ -56,6 +56,7 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 	}
 
 	var results []*pb.Ticket
+	queryLimit := int(req.GetLimit())
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
 		if !ok {
@@ -66,6 +67,10 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		for _, ticket := range tickets {
 			if pf.In(ticket) {
 				results = append(results, ticket)
+			}
+
+			if queryLimit > 0 && len(results) >= queryLimit {
+				break
 			}
 		}
 	})
@@ -114,6 +119,7 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 	}
 
 	var results []string
+	queryLimit := int(req.GetLimit())
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
 		if !ok {
@@ -124,6 +130,10 @@ func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseSer
 		for id, ticket := range tickets {
 			if pf.In(ticket) {
 				results = append(results, id)
+			}
+
+			if queryLimit > 0 && len(results) >= queryLimit {
+				break
 			}
 		}
 	})
@@ -164,6 +174,7 @@ func (s *queryService) QueryBackfills(req *pb.QueryBackfillsRequest, responseSer
 	}
 
 	var results []*pb.Backfill
+	queryLimit := int(req.GetLimit())
 	err = s.bc.request(ctx, func(value interface{}) {
 		backfills, ok := value.(map[string]*pb.Backfill)
 		if !ok {
@@ -174,6 +185,10 @@ func (s *queryService) QueryBackfills(req *pb.QueryBackfillsRequest, responseSer
 		for _, backfill := range backfills {
 			if pf.In(backfill) {
 				results = append(results, backfill)
+			}
+
+			if queryLimit > 0 && len(results) >= queryLimit {
+				break
 			}
 		}
 	})

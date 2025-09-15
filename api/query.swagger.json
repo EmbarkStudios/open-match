@@ -341,6 +341,10 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -362,6 +366,10 @@
         "pool": {
           "$ref": "#/definitions/openmatchPool",
           "description": "The Pool representing the set of Filters to be queried."
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

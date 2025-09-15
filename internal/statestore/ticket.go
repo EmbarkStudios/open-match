@@ -17,6 +17,7 @@ package statestore
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -220,18 +221,53 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
 	}
 
-	idsIndexed, err := redis.Strings(redisConn.Do("SMEMBERS", allTickets))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+	//idsIndexed, err := redis.Strings(redisConn.Do("SMEMBERS", allTickets))
+	//if err != nil {
+	//	return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+	//}
+
+	r := make(map[string]struct{})
+	cursor := 0
+
+	for {
+		// SSCAN allTickets <cursor> COUNT 5000
+		vals, err := redis.Values(redisConn.Do("SSCAN", allTickets, cursor, "COUNT", 25000))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error scanning all indexed ticket ids %v", err)
+		}
+
+		var members []string
+		_, err = redis.Scan(vals, &cursor, &members)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error parsing scan response: %v", err)
+		}
+
+		for _, id := range members {
+			r[id] = struct{}{}
+		}
+
+		if cursor == 0 {
+			break // iteration complete
+		}
 	}
 
-	r := make(map[string]struct{}, len(idsIndexed))
-	for _, id := range idsIndexed {
-		r[id] = struct{}{}
-	}
+	// Now remove pending releases
 	for _, id := range idsInPendingReleases {
 		delete(r, id)
 	}
+
+	//r := make(map[string]struct{}, len(idsIndexed))
+	//for _, id := range idsIndexed {
+	//	r[id] = struct{}{}
+	//}
+	//for _, id := range idsInPendingReleases {
+	//	delete(r, id)
+	//}
+
+	logger.WithFields(logrus.Fields{
+		"count":   len(r),
+		"elapsed": time.Since(curTime).Seconds(),
+	}).Infoln("GetIndexedIDSet")
 
 	return r, nil
 }

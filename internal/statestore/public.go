@@ -135,10 +135,10 @@ type Service interface {
 	DeleteTicketCompletely(ctx context.Context, id string) error
 
 	// GetExpiredTicketIDs gets all ticket IDs which are expired
-	GetExpiredTicketIDs(ctx context.Context) ([]string, error)
+	GetExpiredTicketIDs(ctx context.Context, limit int) ([]string, error)
 
 	// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
-	GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error)
+	GetIndexedIDSetWithTTL(ctx context.Context, limit int) (map[string]struct{}, error)
 }
 
 // New creates a Service based on the configuration.

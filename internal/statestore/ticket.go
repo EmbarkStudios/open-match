@@ -18,9 +18,10 @@ import (
 	"context"
 
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/cenkalti/backoff"
 	"github.com/gomodule/redigo/redis"
@@ -359,7 +360,7 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 }
 
 // GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
-func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error) {
+func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context, limit int) (map[string]struct{}, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "GetIndexedIDSetWithTTL, failed to connect to redis: %v", err)
@@ -378,10 +379,16 @@ func (rb *redisBackend) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]
 	}
 
 	curTimeUnix := curTime.UnixNano()
+	args := redis.Args{
+		allTicketsWithTTL, curTimeUnix, "+inf",
+	}
+	if limit > 0 {
+		args = args.Add("LIMIT", 0, limit)
+	}
 	// fetch only tickets with a score or ttl ahead of or equal to current time
-	idsIndexed, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", allTicketsWithTTL, curTimeUnix, "+inf"))
+	idsIndexed, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", args...))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error getting all indexed ticket ids %v", err)
+		return nil, status.Errorf(codes.Internal, "error getting indexed ticket ids %v", err)
 	}
 
 	r := make(map[string]struct{}, len(idsIndexed))
@@ -696,7 +703,7 @@ func (rb *redisBackend) newConstantBackoffStrategy() backoff.BackOff {
 }
 
 // GetExpiredTicketIDs gets all ticket IDs which are expired
-func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context) ([]string, error) {
+func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context, limit int) ([]string, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "GetExpiredBackfillIDs, failed to connect to redis: %v", err)
@@ -708,8 +715,15 @@ func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context) ([]string, erro
 	endTimeInt := curTime.Add(-ticketTTL).UnixNano() // anything before the now - ttl
 	startTimeInt := 0                                // unix epoc start time
 
+	args := redis.Args{
+		allTicketsWithTTL, startTimeInt, endTimeInt,
+	}
+	if limit > 0 {
+		args = append(args, "LIMIT", 0, limit)
+	}
+
 	// Filter out ticket IDs that are fetched but not assigned within TTL time (ms).
-	expiredTicketIds, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", allTicketsWithTTL, startTimeInt, endTimeInt))
+	expiredTicketIds, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", args...))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error getting expired tickets %v", err)
 	}
@@ -778,7 +792,7 @@ func (rb *redisBackend) cleanupTicketsWorker(ctx context.Context, ticketIDsCh <-
 }
 
 func (rb *redisBackend) CleanupTickets(ctx context.Context) error {
-	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx, 0)
 	if err != nil {
 		return err
 	}

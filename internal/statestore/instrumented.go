@@ -232,15 +232,15 @@ func (is *instrumentedService) DeleteTicketCompletely(ctx context.Context, id st
 }
 
 // GetExpiredTicketIDs gets all ticket IDs which are expired
-func (is *instrumentedService) GetExpiredTicketIDs(ctx context.Context) ([]string, error) {
+func (is *instrumentedService) GetExpiredTicketIDs(ctx context.Context, limit int) ([]string, error) {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetExpiredTicketIDs")
 	defer span.End()
-	return is.s.GetExpiredTicketIDs(ctx)
+	return is.s.GetExpiredTicketIDs(ctx, 0)
 }
 
 // GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
-func (is *instrumentedService) GetIndexedIDSetWithTTL(ctx context.Context) (map[string]struct{}, error) {
+func (is *instrumentedService) GetIndexedIDSetWithTTL(ctx context.Context, limit int) (map[string]struct{}, error) {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetIndexedIDSetWithTTL")
 	defer span.End()
-	return is.s.GetIndexedIDSetWithTTL(ctx)
+	return is.s.GetIndexedIDSetWithTTL(ctx, 0)
 }

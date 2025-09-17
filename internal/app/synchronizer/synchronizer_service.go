@@ -303,12 +303,6 @@ Registration:
 	if err != nil {
 		logger.Errorf("Failed to clean up backfills, %s", err.Error())
 	}
-
-	// TODO: this should probably be enabled much later like after a day of running without it for the transition for Prod
-	err = s.store.CleanupTickets(ctx)
-	if err != nil {
-		logger.Errorf("Failed to clean up tickets, %s", err.Error())
-	}
 }
 
 ///////////////////////////////////////

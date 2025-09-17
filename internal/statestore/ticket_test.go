@@ -549,7 +549,7 @@ func TestGetTicketWithTTLRefresh(t *testing.T) {
 
 	// sleep for less than expiry, should not expire the tickets
 	time.Sleep(cfg.GetDuration("ticketDeleteTimeout") - 100*time.Millisecond)
-	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 1)
 	_, exists := idsIndexedMap[ticket.Id]
@@ -559,7 +559,7 @@ func TestGetTicketWithTTLRefresh(t *testing.T) {
 	time.Sleep(cfg.GetDuration("ticketDeleteTimeout") + 100*time.Millisecond)
 
 	//  check that all the tickets expired even before clean up
-	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.Nil(t, err)
 	require.Empty(t, idsIndexedMap)
 
@@ -745,7 +745,7 @@ func TestIndexTicket(t *testing.T) {
 	}
 
 	// also check that there is only 1 ticket in the returned map
-	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 2)
 	checkExists("mockTicketID-0", idsIndexedMap)
@@ -784,7 +784,7 @@ func TestDeindexTicket(t *testing.T) {
 	require.Equal(t, "mockTicketID-1", idsIndexed[1])
 
 	// also check that both tickets are indexed correctly
-	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 2)
 
@@ -797,7 +797,7 @@ func TestDeindexTicket(t *testing.T) {
 	require.Equal(t, "mockTicketID-0", idsIndexed[0])
 
 	// also check that there is only 1 ticket in the returned map
-	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 1)
 	_, exists := idsIndexedMap["mockTicketID-0"]
@@ -833,7 +833,7 @@ func TestDeindexTickets(t *testing.T) {
 	require.Equal(t, "mockTicketID-1", idsIndexed[1])
 
 	// also check that both tickets exist
-	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 2)
 
@@ -846,7 +846,7 @@ func TestDeindexTickets(t *testing.T) {
 	require.Equal(t, "mockTicketID-0", idsIndexed[0])
 
 	// also check that there is only 1 ticket in the returned map
-	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx)
+	idsIndexedMap, err = service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, idsIndexedMap, 1)
 	_, exists := idsIndexedMap["mockTicketID-0"]
@@ -916,7 +916,7 @@ func TestGetIndexedIDSetWithTTL(t *testing.T) {
 	ctx := utilTesting.NewContext(t)
 
 	verifyTickets := func(service Service, tickets []*pb.Ticket) {
-		ids, err := service.GetIndexedIDSetWithTTL(ctx)
+		ids, err := service.GetIndexedIDSetWithTTL(ctx, len(tickets))
 		require.Nil(t, err)
 		require.Equal(t, len(tickets), len(ids))
 
@@ -926,7 +926,7 @@ func TestGetIndexedIDSetWithTTL(t *testing.T) {
 		}
 	}
 
-	tickets, _ := generateTickets(ctx, t, service, 2)
+	tickets, _ := generateTickets(ctx, t, service, 20)
 
 	// Verify all tickets are created and returned
 	verifyTickets(service, tickets)
@@ -996,7 +996,7 @@ func TestGetTicketsWithTTLRefresh(t *testing.T) {
 	}
 
 	verifyTickets := func(service Service, tickets []*pb.Ticket) {
-		ids, err := service.GetIndexedIDSetWithTTL(ctx)
+		ids, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 		require.Nil(t, err)
 		require.Equal(t, len(tickets), len(ids))
 
@@ -1112,7 +1112,7 @@ func TestReleaseAllTickets(t *testing.T) {
 		}
 
 		// check that we also de-indexed from our ordered set
-		ids, err = service.GetIndexedIDSetWithTTL(ctx)
+		ids, err = service.GetIndexedIDSetWithTTL(ctx, 0)
 		require.Nil(t, err)
 		require.Equal(t, len(tickets), len(ids))
 	}
@@ -1163,7 +1163,7 @@ func TestAddTicketsToPendingRelease(t *testing.T) {
 			require.True(t, ok)
 		}
 
-		ids, err = service.GetIndexedIDSetWithTTL(ctx)
+		ids, err = service.GetIndexedIDSetWithTTL(ctx, 0)
 		require.Nil(t, err)
 		require.Equal(t, len(tickets), len(ids))
 	}
@@ -1242,7 +1242,7 @@ func TestGetExpiredTicketIDs(t *testing.T) {
 	require.NotNil(t, ticketActual)
 
 	// no tickets expired yet
-	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 0)
 
@@ -1250,12 +1250,12 @@ func TestGetExpiredTicketIDs(t *testing.T) {
 	time.Sleep(getTicketReleaseTimeout(cfg) + 500*time.Millisecond)
 
 	// there should be an expired ticket
-	expiredTicketIDs, err = service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err = service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 1)
 
 	// the ticket should not exist but not indexed anymore
-	indexedTickets, err := service.GetIndexedIDSetWithTTL(ctx)
+	indexedTickets, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Empty(t, indexedTickets)
 
@@ -1307,7 +1307,7 @@ func TestCleanupTickets(t *testing.T) {
 	require.NotNil(t, ticketActual)
 
 	// no tickets expired yet
-	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx)
+	expiredTicketIDs, err := service.GetExpiredTicketIDs(ctx, 0)
 	require.NoError(t, err)
 	require.Len(t, expiredTicketIDs, 0)
 
@@ -1319,7 +1319,7 @@ func TestCleanupTickets(t *testing.T) {
 	require.NoError(t, err)
 
 	// the ticket shouldn't exist anymore after the cleanup
-	indexedTickets, err := service.GetIndexedIDSetWithTTL(ctx)
+	indexedTickets, err := service.GetIndexedIDSetWithTTL(ctx, 0)
 	require.NoError(t, err)
 	require.Empty(t, indexedTickets)
 

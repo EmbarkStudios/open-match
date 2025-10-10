@@ -354,6 +354,46 @@
         ]
       }
     },
+    "/v1/frontendservice/tickets/batch_get": {
+      "post": {
+        "summary": "GetTicket get the Ticket associated with the specified TicketId.",
+        "operationId": "FrontendService_GetTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/openmatchGetTicketsResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/openmatchGetTicketsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "FrontendService"
+        ]
+      }
+    },
     "/v1/frontendservice/tickets/count": {
       "get": {
         "summary": "GetIndexedTicketCount returns the count of tickets currently indexed",
@@ -637,6 +677,29 @@
         "count": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "openmatchGetTicketsRequest": {
+      "type": "object",
+      "properties": {
+        "ticket_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "openmatchGetTicketsResponse": {
+      "type": "object",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/openmatchTicket"
+          }
         }
       }
     },

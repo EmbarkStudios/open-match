@@ -136,6 +136,14 @@ message DeleteTicketsRequest {
   repeated string ticket_ids = 1;
 }
 
+message GetTicketsRequest {
+  repeated string ticket_ids = 1;
+}
+
+message GetTicketsResponse {
+  repeated Ticket tickets = 1;
+}
+
 message GetIndexedTicketCountRequest{
 
 }
@@ -253,6 +261,14 @@ service FrontendService {
   rpc GetIndexedTicketCount(GetIndexedTicketCountRequest) returns (GetIndexedTicketCountResponse) {
     option (google.api.http) = {
       get: "/v1/frontendservice/tickets/count"
+    };
+  }
+
+  // GetTicket get the Ticket associated with the specified TicketId.
+  rpc GetTickets(GetTicketsRequest) returns (GetTicketsResponse) {
+    option (google.api.http) = {
+      post: "/v1/frontendservice/tickets/batch_get"
+      body: "*"
     };
   }
 }

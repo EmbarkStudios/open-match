@@ -46,6 +46,7 @@ const (
 	FrontendService_GetBackfillTickets_FullMethodName    = "/openmatch.FrontendService/GetBackfillTickets"
 	FrontendService_DeleteTickets_FullMethodName         = "/openmatch.FrontendService/DeleteTickets"
 	FrontendService_GetIndexedTicketCount_FullMethodName = "/openmatch.FrontendService/GetIndexedTicketCount"
+	FrontendService_GetTickets_FullMethodName            = "/openmatch.FrontendService/GetTickets"
 )
 
 // FrontendServiceClient is the client API for FrontendService service.
@@ -99,6 +100,8 @@ type FrontendServiceClient interface {
 	DeleteTickets(ctx context.Context, in *DeleteTicketsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// GetIndexedTicketCount returns the count of tickets currently indexed
 	GetIndexedTicketCount(ctx context.Context, in *GetIndexedTicketCountRequest, opts ...grpc.CallOption) (*GetIndexedTicketCountResponse, error)
+	// GetTicket get the Ticket associated with the specified TicketId.
+	GetTickets(ctx context.Context, in *GetTicketsRequest, opts ...grpc.CallOption) (*GetTicketsResponse, error)
 }
 
 type frontendServiceClient struct {
@@ -238,6 +241,16 @@ func (c *frontendServiceClient) GetIndexedTicketCount(ctx context.Context, in *G
 	return out, nil
 }
 
+func (c *frontendServiceClient) GetTickets(ctx context.Context, in *GetTicketsRequest, opts ...grpc.CallOption) (*GetTicketsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTicketsResponse)
+	err := c.cc.Invoke(ctx, FrontendService_GetTickets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FrontendServiceServer is the server API for FrontendService service.
 // All implementations should embed UnimplementedFrontendServiceServer
 // for forward compatibility.
@@ -289,6 +302,8 @@ type FrontendServiceServer interface {
 	DeleteTickets(context.Context, *DeleteTicketsRequest) (*emptypb.Empty, error)
 	// GetIndexedTicketCount returns the count of tickets currently indexed
 	GetIndexedTicketCount(context.Context, *GetIndexedTicketCountRequest) (*GetIndexedTicketCountResponse, error)
+	// GetTicket get the Ticket associated with the specified TicketId.
+	GetTickets(context.Context, *GetTicketsRequest) (*GetTicketsResponse, error)
 }
 
 // UnimplementedFrontendServiceServer should be embedded to have
@@ -333,6 +348,9 @@ func (UnimplementedFrontendServiceServer) DeleteTickets(context.Context, *Delete
 }
 func (UnimplementedFrontendServiceServer) GetIndexedTicketCount(context.Context, *GetIndexedTicketCountRequest) (*GetIndexedTicketCountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIndexedTicketCount not implemented")
+}
+func (UnimplementedFrontendServiceServer) GetTickets(context.Context, *GetTicketsRequest) (*GetTicketsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTickets not implemented")
 }
 func (UnimplementedFrontendServiceServer) testEmbeddedByValue() {}
 
@@ -563,6 +581,24 @@ func _FrontendService_GetIndexedTicketCount_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FrontendService_GetTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTicketsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FrontendServiceServer).GetTickets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FrontendService_GetTickets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FrontendServiceServer).GetTickets(ctx, req.(*GetTicketsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FrontendService_ServiceDesc is the grpc.ServiceDesc for FrontendService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -613,6 +649,10 @@ var FrontendService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetIndexedTicketCount",
 			Handler:    _FrontendService_GetIndexedTicketCount_Handler,
+		},
+		{
+			MethodName: "GetTickets",
+			Handler:    _FrontendService_GetTickets_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

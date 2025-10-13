@@ -487,14 +487,12 @@ func (s *frontendService) GetIndexedTicketCount(ctx context.Context, _ *pb.GetIn
 
 func (s *frontendService) GetTickets(ctx context.Context, req *pb.GetTicketsRequest) (*pb.GetTicketsResponse, error) {
 	resp := &pb.GetTicketsResponse{}
-	if len(req.TicketIds) > 0 {
-		tickets, err := s.store.GetTickets(ctx, req.TicketIds)
-		if err != nil {
-			return nil, err
-		}
 
-		resp.Tickets = tickets
+	tickets, err := s.store.GetTickets(ctx, req.TicketIds)
+	if err != nil {
+		return nil, err
 	}
+	resp.Tickets = tickets
 
 	return resp, nil
 }

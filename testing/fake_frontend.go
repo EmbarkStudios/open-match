@@ -25,8 +25,7 @@ import (
 )
 
 // FakeFrontend is an empty gRPC handler.
-type FakeFrontend struct {
-}
+type FakeFrontend struct{}
 
 func (s *FakeFrontend) GetIndexedTicketCount(ctx context.Context, request *pb.GetIndexedTicketCountRequest) (*pb.GetIndexedTicketCountResponse, error) {
 	return &pb.GetIndexedTicketCountResponse{}, nil
@@ -90,5 +89,9 @@ func (s *FakeFrontend) GetBackfill(ctx context.Context, req *pb.GetBackfillReque
 
 // UpdateBackfill updates a Backfill object, if present.
 func (s *FakeFrontend) UpdateBackfill(ctx context.Context, req *pb.UpdateBackfillRequest) (*pb.Backfill, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (s *FakeFrontend) GetTickets(ctx context.Context, req *pb.GetTicketsRequest) (*pb.GetTicketsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

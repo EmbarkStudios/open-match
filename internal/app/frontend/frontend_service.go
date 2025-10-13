@@ -38,12 +38,10 @@ type frontendService struct {
 	store statestore.Service
 }
 
-var (
-	logger = logrus.WithFields(logrus.Fields{
-		"app":       "openmatch",
-		"component": "app.frontend",
-	})
-)
+var logger = logrus.WithFields(logrus.Fields{
+	"app":       "openmatch",
+	"component": "app.frontend",
+})
 
 // CreateTicket assigns an unique TicketId to the input Ticket and record it in state storage.
 // A ticket is considered as ready for matchmaking once it is created.
@@ -483,6 +481,18 @@ func (s *frontendService) GetIndexedTicketCount(ctx context.Context, _ *pb.GetIn
 	resp := &pb.GetIndexedTicketCountResponse{
 		Count: int32(ticketCount),
 	}
+
+	return resp, nil
+}
+
+func (s *frontendService) GetTickets(ctx context.Context, req *pb.GetTicketsRequest) (*pb.GetTicketsResponse, error) {
+	resp := &pb.GetTicketsResponse{}
+
+	tickets, err := s.store.GetTickets(ctx, req.TicketIds)
+	if err != nil {
+		return nil, err
+	}
+	resp.Tickets = tickets
 
 	return resp, nil
 }

@@ -59,6 +59,9 @@ type Service interface {
 	// GetIndexedIDSet returns the ids of all tickets currently indexed.
 	GetIndexedIDSet(ctx context.Context) (map[string]struct{}, error)
 
+	// GetRandomIndexedIDSet returns random ids of all tickets currently indexed.
+	GetRandomIndexedIDSet(ctx context.Context, limit int) (map[string]struct{}, error)
+
 	// GetTickets returns multiple tickets from storage.
 	// Missing tickets are silently ignored.
 	GetTickets(ctx context.Context, ids []string) ([]*pb.Ticket, error)

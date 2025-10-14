@@ -15,7 +15,17 @@
 package query
 
 import (
+	"context"
+	"fmt"
+	"hash/crc32"
+	"runtime/trace"
+	"sync"
+
+	lru "github.com/hashicorp/golang-lru"
 	"go.opencensus.io/stats"
+	"golang.org/x/sync/singleflight"
+	"google.golang.org/protobuf/proto"
+	"open-match.dev/open-match/internal/statestore"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -36,9 +46,12 @@ var (
 // queryService API provides utility functions for common MMF functionality such
 // as retrieving Tickets from state storage.
 type queryService struct {
-	cfg config.View
-	tc  *cache
-	bc  *cache
+	cfg               config.View
+	tc                *cache
+	bc                *cache
+	store             statestore.Service
+	batchCache        *lru.Cache
+	batchSingleFlight singleflight.Group
 }
 
 func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer pb.QueryService_QueryTicketsServer) error {
@@ -89,6 +102,108 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 	}
 
 	return nil
+}
+
+const (
+	defaultBatchQueryTicketsQueryLimit  = 10_000
+	defaultBatchQueryTicketsResultLimit = 1_000
+)
+
+func (s *queryService) BatchQueryTickets(ctx context.Context, req *pb.BatchQueryTicketsRequest) (*pb.BatchQueryTicketsResponse, error) {
+	queryLimit := defaultBatchQueryTicketsQueryLimit
+	if req.QueryLimit > 0 {
+		queryLimit = int(req.QueryLimit)
+	}
+
+	resultLimit := defaultBatchQueryTicketsResultLimit
+	if req.ResultLimit > 0 {
+		resultLimit = int(req.ResultLimit)
+	}
+
+	// TODO: If the properties of the pools is not stable in order when we create them, we can just go by the pool
+	//  names here instead of the full request.
+	data, _ := proto.Marshal(req)
+	h := crc32.NewIEEE()
+	_, _ = h.Write(data)
+	singleFlightKey := string(h.Sum(nil))
+
+	v, err, _ := s.batchSingleFlight.Do(singleFlightKey, func() (interface{}, error) {
+		r := trace.StartRegion(ctx, "getRandomIndexIDSet")
+		ticketIDs, err := s.store.GetRandomIndexedIDSet(ctx, queryLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get random indexed ids: %w", err)
+		}
+		r.End()
+
+		r = trace.StartRegion(ctx, "fetchCached")
+		tickets := make(map[string]*pb.Ticket, len(ticketIDs))
+
+		var missingIDs []string
+		for ticketID := range ticketIDs {
+			if t, ok := s.batchCache.Get(ticketID); ok {
+				tickets[ticketID] = t.(*pb.Ticket)
+				continue
+			}
+			missingIDs = append(missingIDs, ticketID)
+		}
+		r.End()
+
+		r = trace.StartRegion(ctx, "fetchMissing")
+		if len(missingIDs) > 0 {
+			missingTickets, err := s.store.GetTickets(ctx, missingIDs)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get missing tickets: %w", err)
+			}
+
+			for _, ticket := range missingTickets {
+				tickets[ticket.Id] = ticket
+				s.batchCache.Add(ticket.Id, ticket)
+			}
+		}
+		r.End()
+
+		poolFilters := make(map[string]*filter.PoolFilter, len(req.Pools))
+		poolTickets := make(map[string]*pb.BatchQueryTicketsResponse_PoolTickets, len(req.Pools))
+		for _, pool := range req.Pools {
+			poolTickets[pool.Name] = &pb.BatchQueryTicketsResponse_PoolTickets{}
+
+			pf, err := filter.NewPoolFilter(pool)
+			if err != nil {
+				return nil, err
+			}
+			poolFilters[pool.Name] = pf
+		}
+
+		r = trace.StartRegion(ctx, "filterTickets")
+		wg := &sync.WaitGroup{}
+		for _, pool := range req.Pools {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for _, ticket := range tickets {
+					if len(poolTickets[pool.Name].TicketIds) >= resultLimit {
+						continue
+					}
+
+					if poolFilters[pool.Name].In(ticket) {
+						poolTickets[pool.Name].TicketIds = append(poolTickets[pool.Name].TicketIds)
+					}
+				}
+			}()
+		}
+		wg.Wait()
+		r.End()
+
+		return &pb.BatchQueryTicketsResponse{
+			PoolTickets: poolTickets,
+			Tickets:     tickets,
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*pb.BatchQueryTicketsResponse), nil
 }
 
 func (s *queryService) QueryTicketIds(req *pb.QueryTicketIdsRequest, responseServer pb.QueryService_QueryTicketIdsServer) error {

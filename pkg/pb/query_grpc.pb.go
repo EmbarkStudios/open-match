@@ -33,9 +33,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	QueryService_QueryTickets_FullMethodName   = "/openmatch.QueryService/QueryTickets"
-	QueryService_QueryTicketIds_FullMethodName = "/openmatch.QueryService/QueryTicketIds"
-	QueryService_QueryBackfills_FullMethodName = "/openmatch.QueryService/QueryBackfills"
+	QueryService_QueryTickets_FullMethodName      = "/openmatch.QueryService/QueryTickets"
+	QueryService_BatchQueryTickets_FullMethodName = "/openmatch.QueryService/BatchQueryTickets"
+	QueryService_QueryTicketIds_FullMethodName    = "/openmatch.QueryService/QueryTicketIds"
+	QueryService_QueryBackfills_FullMethodName    = "/openmatch.QueryService/QueryBackfills"
 )
 
 // QueryServiceClient is the client API for QueryService service.
@@ -50,6 +51,8 @@ type QueryServiceClient interface {
 	// QueryTickets pages the Tickets by `queryPageSize` and stream back responses.
 	//   - queryPageSize is default to 1000 if not set, and has a minimum of 10 and maximum of 10000.
 	QueryTickets(ctx context.Context, in *QueryTicketsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryTicketsResponse], error)
+	// BatchQueryTickets
+	BatchQueryTickets(ctx context.Context, in *BatchQueryTicketsRequest, opts ...grpc.CallOption) (*BatchQueryTicketsResponse, error)
 	// QueryTicketIds gets the list of TicketIDs that meet all the filtering criteria requested by the pool.
 	//   - If the Pool contains no Filters, QueryTicketIds will return all TicketIDs in the state storage.
 	//
@@ -88,6 +91,16 @@ func (c *queryServiceClient) QueryTickets(ctx context.Context, in *QueryTicketsR
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type QueryService_QueryTicketsClient = grpc.ServerStreamingClient[QueryTicketsResponse]
+
+func (c *queryServiceClient) BatchQueryTickets(ctx context.Context, in *BatchQueryTicketsRequest, opts ...grpc.CallOption) (*BatchQueryTicketsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchQueryTicketsResponse)
+	err := c.cc.Invoke(ctx, QueryService_BatchQueryTickets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
 func (c *queryServiceClient) QueryTicketIds(ctx context.Context, in *QueryTicketIdsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryTicketIdsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -139,6 +152,8 @@ type QueryServiceServer interface {
 	// QueryTickets pages the Tickets by `queryPageSize` and stream back responses.
 	//   - queryPageSize is default to 1000 if not set, and has a minimum of 10 and maximum of 10000.
 	QueryTickets(*QueryTicketsRequest, grpc.ServerStreamingServer[QueryTicketsResponse]) error
+	// BatchQueryTickets
+	BatchQueryTickets(context.Context, *BatchQueryTicketsRequest) (*BatchQueryTicketsResponse, error)
 	// QueryTicketIds gets the list of TicketIDs that meet all the filtering criteria requested by the pool.
 	//   - If the Pool contains no Filters, QueryTicketIds will return all TicketIDs in the state storage.
 	//
@@ -160,6 +175,9 @@ type UnimplementedQueryServiceServer struct{}
 
 func (UnimplementedQueryServiceServer) QueryTickets(*QueryTicketsRequest, grpc.ServerStreamingServer[QueryTicketsResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method QueryTickets not implemented")
+}
+func (UnimplementedQueryServiceServer) BatchQueryTickets(context.Context, *BatchQueryTicketsRequest) (*BatchQueryTicketsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchQueryTickets not implemented")
 }
 func (UnimplementedQueryServiceServer) QueryTicketIds(*QueryTicketIdsRequest, grpc.ServerStreamingServer[QueryTicketIdsResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method QueryTicketIds not implemented")
@@ -198,6 +216,24 @@ func _QueryService_QueryTickets_Handler(srv interface{}, stream grpc.ServerStrea
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type QueryService_QueryTicketsServer = grpc.ServerStreamingServer[QueryTicketsResponse]
 
+func _QueryService_BatchQueryTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchQueryTicketsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServiceServer).BatchQueryTickets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueryService_BatchQueryTickets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServiceServer).BatchQueryTickets(ctx, req.(*BatchQueryTicketsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _QueryService_QueryTicketIds_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(QueryTicketIdsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -226,7 +262,12 @@ type QueryService_QueryBackfillsServer = grpc.ServerStreamingServer[QueryBackfil
 var QueryService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "openmatch.QueryService",
 	HandlerType: (*QueryServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "BatchQueryTickets",
+			Handler:    _QueryService_BatchQueryTickets_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "QueryTickets",

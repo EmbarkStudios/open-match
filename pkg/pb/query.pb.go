@@ -127,6 +127,123 @@ func (x *QueryTicketsResponse) GetTickets() []*Ticket {
 	return nil
 }
 
+type BatchQueryTicketsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Pools to query tickets for.
+	Pools []*Pool `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
+	// Max amount of tickets to query and filter for each pool. Defaults to 10000.
+	QueryLimit int32 `protobuf:"varint,2,opt,name=query_limit,json=queryLimit,proto3" json:"query_limit,omitempty"`
+	// Max amount of tickets per pool to return. Defaults to 1000.
+	ResultLimit   int32 `protobuf:"varint,3,opt,name=result_limit,json=resultLimit,proto3" json:"result_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchQueryTicketsRequest) Reset() {
+	*x = BatchQueryTicketsRequest{}
+	mi := &file_api_query_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchQueryTicketsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchQueryTicketsRequest) ProtoMessage() {}
+
+func (x *BatchQueryTicketsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_query_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchQueryTicketsRequest.ProtoReflect.Descriptor instead.
+func (*BatchQueryTicketsRequest) Descriptor() ([]byte, []int) {
+	return file_api_query_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BatchQueryTicketsRequest) GetPools() []*Pool {
+	if x != nil {
+		return x.Pools
+	}
+	return nil
+}
+
+func (x *BatchQueryTicketsRequest) GetQueryLimit() int32 {
+	if x != nil {
+		return x.QueryLimit
+	}
+	return 0
+}
+
+func (x *BatchQueryTicketsRequest) GetResultLimit() int32 {
+	if x != nil {
+		return x.ResultLimit
+	}
+	return 0
+}
+
+type BatchQueryTicketsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Pool id to tickets id mapping
+	PoolTickets map[string]*BatchQueryTicketsResponse_PoolTickets `protobuf:"bytes,1,rep,name=pool_tickets,json=poolTickets,proto3" json:"pool_tickets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Ticket id to ticket mapping
+	Tickets       map[string]*Ticket `protobuf:"bytes,2,rep,name=tickets,proto3" json:"tickets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchQueryTicketsResponse) Reset() {
+	*x = BatchQueryTicketsResponse{}
+	mi := &file_api_query_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchQueryTicketsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchQueryTicketsResponse) ProtoMessage() {}
+
+func (x *BatchQueryTicketsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_query_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchQueryTicketsResponse.ProtoReflect.Descriptor instead.
+func (*BatchQueryTicketsResponse) Descriptor() ([]byte, []int) {
+	return file_api_query_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BatchQueryTicketsResponse) GetPoolTickets() map[string]*BatchQueryTicketsResponse_PoolTickets {
+	if x != nil {
+		return x.PoolTickets
+	}
+	return nil
+}
+
+func (x *BatchQueryTicketsResponse) GetTickets() map[string]*Ticket {
+	if x != nil {
+		return x.Tickets
+	}
+	return nil
+}
+
 type QueryTicketIdsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The Pool representing the set of Filters to be queried.
@@ -137,7 +254,7 @@ type QueryTicketIdsRequest struct {
 
 func (x *QueryTicketIdsRequest) Reset() {
 	*x = QueryTicketIdsRequest{}
-	mi := &file_api_query_proto_msgTypes[2]
+	mi := &file_api_query_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +266,7 @@ func (x *QueryTicketIdsRequest) String() string {
 func (*QueryTicketIdsRequest) ProtoMessage() {}
 
 func (x *QueryTicketIdsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_query_proto_msgTypes[2]
+	mi := &file_api_query_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +279,7 @@ func (x *QueryTicketIdsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTicketIdsRequest.ProtoReflect.Descriptor instead.
 func (*QueryTicketIdsRequest) Descriptor() ([]byte, []int) {
-	return file_api_query_proto_rawDescGZIP(), []int{2}
+	return file_api_query_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *QueryTicketIdsRequest) GetPool() *Pool {
@@ -182,7 +299,7 @@ type QueryTicketIdsResponse struct {
 
 func (x *QueryTicketIdsResponse) Reset() {
 	*x = QueryTicketIdsResponse{}
-	mi := &file_api_query_proto_msgTypes[3]
+	mi := &file_api_query_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -194,7 +311,7 @@ func (x *QueryTicketIdsResponse) String() string {
 func (*QueryTicketIdsResponse) ProtoMessage() {}
 
 func (x *QueryTicketIdsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_query_proto_msgTypes[3]
+	mi := &file_api_query_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -207,7 +324,7 @@ func (x *QueryTicketIdsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTicketIdsResponse.ProtoReflect.Descriptor instead.
 func (*QueryTicketIdsResponse) Descriptor() ([]byte, []int) {
-	return file_api_query_proto_rawDescGZIP(), []int{3}
+	return file_api_query_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *QueryTicketIdsResponse) GetIds() []string {
@@ -229,7 +346,7 @@ type QueryBackfillsRequest struct {
 
 func (x *QueryBackfillsRequest) Reset() {
 	*x = QueryBackfillsRequest{}
-	mi := &file_api_query_proto_msgTypes[4]
+	mi := &file_api_query_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -241,7 +358,7 @@ func (x *QueryBackfillsRequest) String() string {
 func (*QueryBackfillsRequest) ProtoMessage() {}
 
 func (x *QueryBackfillsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_query_proto_msgTypes[4]
+	mi := &file_api_query_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -254,7 +371,7 @@ func (x *QueryBackfillsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryBackfillsRequest.ProtoReflect.Descriptor instead.
 func (*QueryBackfillsRequest) Descriptor() ([]byte, []int) {
-	return file_api_query_proto_rawDescGZIP(), []int{4}
+	return file_api_query_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QueryBackfillsRequest) GetPool() *Pool {
@@ -276,7 +393,7 @@ type QueryBackfillsResponse struct {
 
 func (x *QueryBackfillsResponse) Reset() {
 	*x = QueryBackfillsResponse{}
-	mi := &file_api_query_proto_msgTypes[5]
+	mi := &file_api_query_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +405,7 @@ func (x *QueryBackfillsResponse) String() string {
 func (*QueryBackfillsResponse) ProtoMessage() {}
 
 func (x *QueryBackfillsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_query_proto_msgTypes[5]
+	mi := &file_api_query_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,12 +418,57 @@ func (x *QueryBackfillsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryBackfillsResponse.ProtoReflect.Descriptor instead.
 func (*QueryBackfillsResponse) Descriptor() ([]byte, []int) {
-	return file_api_query_proto_rawDescGZIP(), []int{5}
+	return file_api_query_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QueryBackfillsResponse) GetBackfills() []*Backfill {
 	if x != nil {
 		return x.Backfills
+	}
+	return nil
+}
+
+// Ticket ids per pool
+type BatchQueryTicketsResponse_PoolTickets struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TicketIds     []string               `protobuf:"bytes,1,rep,name=ticket_ids,json=ticketIds,proto3" json:"ticket_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchQueryTicketsResponse_PoolTickets) Reset() {
+	*x = BatchQueryTicketsResponse_PoolTickets{}
+	mi := &file_api_query_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchQueryTicketsResponse_PoolTickets) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchQueryTicketsResponse_PoolTickets) ProtoMessage() {}
+
+func (x *BatchQueryTicketsResponse_PoolTickets) ProtoReflect() protoreflect.Message {
+	mi := &file_api_query_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchQueryTicketsResponse_PoolTickets.ProtoReflect.Descriptor instead.
+func (*BatchQueryTicketsResponse_PoolTickets) Descriptor() ([]byte, []int) {
+	return file_api_query_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *BatchQueryTicketsResponse_PoolTickets) GetTicketIds() []string {
+	if x != nil {
+		return x.TicketIds
 	}
 	return nil
 }
@@ -319,7 +481,24 @@ const file_api_query_proto_rawDesc = "" +
 	"\x13QueryTicketsRequest\x12#\n" +
 	"\x04pool\x18\x01 \x01(\v2\x0f.openmatch.PoolR\x04pool\"C\n" +
 	"\x14QueryTicketsResponse\x12+\n" +
-	"\atickets\x18\x01 \x03(\v2\x11.openmatch.TicketR\atickets\"<\n" +
+	"\atickets\x18\x01 \x03(\v2\x11.openmatch.TicketR\atickets\"\x85\x01\n" +
+	"\x18BatchQueryTicketsRequest\x12%\n" +
+	"\x05pools\x18\x01 \x03(\v2\x0f.openmatch.PoolR\x05pools\x12\x1f\n" +
+	"\vquery_limit\x18\x02 \x01(\x05R\n" +
+	"queryLimit\x12!\n" +
+	"\fresult_limit\x18\x03 \x01(\x05R\vresultLimit\"\xb1\x03\n" +
+	"\x19BatchQueryTicketsResponse\x12X\n" +
+	"\fpool_tickets\x18\x01 \x03(\v25.openmatch.BatchQueryTicketsResponse.PoolTicketsEntryR\vpoolTickets\x12K\n" +
+	"\atickets\x18\x02 \x03(\v21.openmatch.BatchQueryTicketsResponse.TicketsEntryR\atickets\x1a,\n" +
+	"\vPoolTickets\x12\x1d\n" +
+	"\n" +
+	"ticket_ids\x18\x01 \x03(\tR\tticketIds\x1ap\n" +
+	"\x10PoolTicketsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12F\n" +
+	"\x05value\x18\x02 \x01(\v20.openmatch.BatchQueryTicketsResponse.PoolTicketsR\x05value:\x028\x01\x1aM\n" +
+	"\fTicketsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.openmatch.TicketR\x05value:\x028\x01\"<\n" +
 	"\x15QueryTicketIdsRequest\x12#\n" +
 	"\x04pool\x18\x01 \x01(\v2\x0f.openmatch.PoolR\x04pool\"*\n" +
 	"\x16QueryTicketIdsResponse\x12\x10\n" +
@@ -327,9 +506,10 @@ const file_api_query_proto_rawDesc = "" +
 	"\x15QueryBackfillsRequest\x12#\n" +
 	"\x04pool\x18\x01 \x01(\v2\x0f.openmatch.PoolR\x04pool\"K\n" +
 	"\x16QueryBackfillsResponse\x121\n" +
-	"\tbackfills\x18\x01 \x03(\v2\x13.openmatch.BackfillR\tbackfills2\x9a\x03\n" +
+	"\tbackfills\x18\x01 \x03(\v2\x13.openmatch.BackfillR\tbackfills2\xab\x04\n" +
 	"\fQueryService\x12|\n" +
-	"\fQueryTickets\x12\x1e.openmatch.QueryTicketsRequest\x1a\x1f.openmatch.QueryTicketsResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/queryservice/tickets:query0\x01\x12\x84\x01\n" +
+	"\fQueryTickets\x12\x1e.openmatch.QueryTicketsRequest\x1a\x1f.openmatch.QueryTicketsResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/queryservice/tickets:query0\x01\x12\x8e\x01\n" +
+	"\x11BatchQueryTickets\x12#.openmatch.BatchQueryTicketsRequest\x1a$.openmatch.BatchQueryTicketsResponse\".\x82\xd3\xe4\x93\x02(:\x01*\"#/v1/queryservice/batchtickets:query\x12\x84\x01\n" +
 	"\x0eQueryTicketIds\x12 .openmatch.QueryTicketIdsRequest\x1a!.openmatch.QueryTicketIdsResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/queryservice/ticketids:query0\x01\x12\x84\x01\n" +
 	"\x0eQueryBackfills\x12 .openmatch.QueryBackfillsRequest\x1a!.openmatch.QueryBackfillsResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /v1/queryservice/backfills:query0\x01B\x98\x03\x92A\xe6\x02\x12\xbf\x01\n" +
 	"\x15MM Logic (Data Layer)\"I\n" +
@@ -353,35 +533,47 @@ func file_api_query_proto_rawDescGZIP() []byte {
 	return file_api_query_proto_rawDescData
 }
 
-var file_api_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_api_query_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_api_query_proto_goTypes = []any{
-	(*QueryTicketsRequest)(nil),    // 0: openmatch.QueryTicketsRequest
-	(*QueryTicketsResponse)(nil),   // 1: openmatch.QueryTicketsResponse
-	(*QueryTicketIdsRequest)(nil),  // 2: openmatch.QueryTicketIdsRequest
-	(*QueryTicketIdsResponse)(nil), // 3: openmatch.QueryTicketIdsResponse
-	(*QueryBackfillsRequest)(nil),  // 4: openmatch.QueryBackfillsRequest
-	(*QueryBackfillsResponse)(nil), // 5: openmatch.QueryBackfillsResponse
-	(*Pool)(nil),                   // 6: openmatch.Pool
-	(*Ticket)(nil),                 // 7: openmatch.Ticket
-	(*Backfill)(nil),               // 8: openmatch.Backfill
+	(*QueryTicketsRequest)(nil),                   // 0: openmatch.QueryTicketsRequest
+	(*QueryTicketsResponse)(nil),                  // 1: openmatch.QueryTicketsResponse
+	(*BatchQueryTicketsRequest)(nil),              // 2: openmatch.BatchQueryTicketsRequest
+	(*BatchQueryTicketsResponse)(nil),             // 3: openmatch.BatchQueryTicketsResponse
+	(*QueryTicketIdsRequest)(nil),                 // 4: openmatch.QueryTicketIdsRequest
+	(*QueryTicketIdsResponse)(nil),                // 5: openmatch.QueryTicketIdsResponse
+	(*QueryBackfillsRequest)(nil),                 // 6: openmatch.QueryBackfillsRequest
+	(*QueryBackfillsResponse)(nil),                // 7: openmatch.QueryBackfillsResponse
+	(*BatchQueryTicketsResponse_PoolTickets)(nil), // 8: openmatch.BatchQueryTicketsResponse.PoolTickets
+	nil,              // 9: openmatch.BatchQueryTicketsResponse.PoolTicketsEntry
+	nil,              // 10: openmatch.BatchQueryTicketsResponse.TicketsEntry
+	(*Pool)(nil),     // 11: openmatch.Pool
+	(*Ticket)(nil),   // 12: openmatch.Ticket
+	(*Backfill)(nil), // 13: openmatch.Backfill
 }
 var file_api_query_proto_depIdxs = []int32{
-	6, // 0: openmatch.QueryTicketsRequest.pool:type_name -> openmatch.Pool
-	7, // 1: openmatch.QueryTicketsResponse.tickets:type_name -> openmatch.Ticket
-	6, // 2: openmatch.QueryTicketIdsRequest.pool:type_name -> openmatch.Pool
-	6, // 3: openmatch.QueryBackfillsRequest.pool:type_name -> openmatch.Pool
-	8, // 4: openmatch.QueryBackfillsResponse.backfills:type_name -> openmatch.Backfill
-	0, // 5: openmatch.QueryService.QueryTickets:input_type -> openmatch.QueryTicketsRequest
-	2, // 6: openmatch.QueryService.QueryTicketIds:input_type -> openmatch.QueryTicketIdsRequest
-	4, // 7: openmatch.QueryService.QueryBackfills:input_type -> openmatch.QueryBackfillsRequest
-	1, // 8: openmatch.QueryService.QueryTickets:output_type -> openmatch.QueryTicketsResponse
-	3, // 9: openmatch.QueryService.QueryTicketIds:output_type -> openmatch.QueryTicketIdsResponse
-	5, // 10: openmatch.QueryService.QueryBackfills:output_type -> openmatch.QueryBackfillsResponse
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	11, // 0: openmatch.QueryTicketsRequest.pool:type_name -> openmatch.Pool
+	12, // 1: openmatch.QueryTicketsResponse.tickets:type_name -> openmatch.Ticket
+	11, // 2: openmatch.BatchQueryTicketsRequest.pools:type_name -> openmatch.Pool
+	9,  // 3: openmatch.BatchQueryTicketsResponse.pool_tickets:type_name -> openmatch.BatchQueryTicketsResponse.PoolTicketsEntry
+	10, // 4: openmatch.BatchQueryTicketsResponse.tickets:type_name -> openmatch.BatchQueryTicketsResponse.TicketsEntry
+	11, // 5: openmatch.QueryTicketIdsRequest.pool:type_name -> openmatch.Pool
+	11, // 6: openmatch.QueryBackfillsRequest.pool:type_name -> openmatch.Pool
+	13, // 7: openmatch.QueryBackfillsResponse.backfills:type_name -> openmatch.Backfill
+	8,  // 8: openmatch.BatchQueryTicketsResponse.PoolTicketsEntry.value:type_name -> openmatch.BatchQueryTicketsResponse.PoolTickets
+	12, // 9: openmatch.BatchQueryTicketsResponse.TicketsEntry.value:type_name -> openmatch.Ticket
+	0,  // 10: openmatch.QueryService.QueryTickets:input_type -> openmatch.QueryTicketsRequest
+	2,  // 11: openmatch.QueryService.BatchQueryTickets:input_type -> openmatch.BatchQueryTicketsRequest
+	4,  // 12: openmatch.QueryService.QueryTicketIds:input_type -> openmatch.QueryTicketIdsRequest
+	6,  // 13: openmatch.QueryService.QueryBackfills:input_type -> openmatch.QueryBackfillsRequest
+	1,  // 14: openmatch.QueryService.QueryTickets:output_type -> openmatch.QueryTicketsResponse
+	3,  // 15: openmatch.QueryService.BatchQueryTickets:output_type -> openmatch.BatchQueryTicketsResponse
+	5,  // 16: openmatch.QueryService.QueryTicketIds:output_type -> openmatch.QueryTicketIdsResponse
+	7,  // 17: openmatch.QueryService.QueryBackfills:output_type -> openmatch.QueryBackfillsResponse
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_api_query_proto_init() }
@@ -396,7 +588,7 @@ func file_api_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_query_proto_rawDesc), len(file_api_query_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

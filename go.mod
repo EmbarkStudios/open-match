@@ -51,6 +51,7 @@ require (
 )
 
 require (
+	github.com/hashicorp/golang-lru v0.6.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
 )

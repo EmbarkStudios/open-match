@@ -89,6 +89,12 @@ func (is *instrumentedService) GetIndexedIDSet(ctx context.Context) (map[string]
 	return is.s.GetIndexedIDSet(ctx)
 }
 
+func (is *instrumentedService) GetRandomIndexedIDSet(ctx context.Context, limit int) (map[string]struct{}, error) {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetRandomIndexedIDSet")
+	defer span.End()
+	return is.s.GetRandomIndexedIDSet(ctx, limit)
+}
+
 func (is *instrumentedService) UpdateAssignments(ctx context.Context, req *pb.AssignTicketsRequest) (*pb.AssignTicketsResponse, []*pb.Ticket, error) {
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.UpdateAssignments")
 	defer span.End()

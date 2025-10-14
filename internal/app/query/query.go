@@ -15,6 +15,9 @@
 package query
 
 import (
+	"fmt"
+
+	lru "github.com/hashicorp/golang-lru"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
@@ -97,13 +100,28 @@ var (
 	}
 )
 
+const defaultBatchCacheSize = 100_000
+
 // BindService creates the query service and binds it to the serving harness.
 func BindService(p *appmain.Params, b *appmain.Bindings) error {
 	store := statestore.New(p.Config())
+
+	batchCacheSize := p.Config().GetInt("queryBatchCacheSize")
+	if batchCacheSize <= 0 {
+		batchCacheSize = defaultBatchCacheSize
+	}
+
+	batchCache, err := lru.New(batchCacheSize)
+	if err != nil {
+		return fmt.Errorf("failed to create lru cache: %w", err)
+	}
+
 	service := &queryService{
-		cfg: p.Config(),
-		tc:  newTicketCache(b, store),
-		bc:  newBackfillCache(b, store),
+		store:      store,
+		batchCache: batchCache,
+		cfg:        p.Config(),
+		tc:         newTicketCache(b, store),
+		bc:         newBackfillCache(b, store),
 	}
 
 	b.AddHandleFunc(func(s *grpc.Server) {

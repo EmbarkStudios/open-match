@@ -65,6 +65,30 @@ message QueryTicketsResponse {
   repeated Ticket tickets = 1;
 }
 
+message BatchQueryTicketsRequest {
+  // Pools to query tickets for.
+  repeated Pool pools = 1;
+
+  // Max amount of tickets to query and filter for each pool. Defaults to 10000.
+  int32 query_limit = 2;
+
+  // Max amount of tickets per pool to return. Defaults to 1000.
+  int32 result_limit = 3;
+}
+
+message BatchQueryTicketsResponse {
+  // Ticket ids per pool
+  message PoolTickets {
+    repeated string ticket_ids = 1;
+  }
+
+  // Pool id to tickets id mapping
+  map<string, PoolTickets> pool_tickets = 1;
+
+  // Ticket id to ticket mapping
+  map<string, Ticket> tickets = 2;
+}
+
 message QueryTicketIdsRequest {
   // The Pool representing the set of Filters to be queried.
   Pool pool = 1;
@@ -98,6 +122,14 @@ service QueryService {
   rpc QueryTickets(QueryTicketsRequest) returns (stream QueryTicketsResponse) {
     option (google.api.http) = {
       post: "/v1/queryservice/tickets:query"
+      body: "*"
+    };
+  }
+
+  // BatchQueryTickets
+  rpc BatchQueryTickets(BatchQueryTicketsRequest) returns (BatchQueryTicketsResponse) {
+    option (google.api.http) = {
+      post: "/v1/queryservice/batchtickets:query"
       body: "*"
     };
   }

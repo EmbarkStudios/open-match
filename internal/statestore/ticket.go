@@ -236,6 +236,41 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 	return r, nil
 }
 
+// GetRandomIndexedIDSet returns random ids of currently indexed tickets.
+func (rb *redisBackend) GetRandomIndexedIDSet(ctx context.Context, limit int) (map[string]struct{}, error) {
+	redisConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "GetRandomIndexedIDSet, failed to connect to redis: %v", err)
+	}
+	defer handleConnectionClose(&redisConn)
+
+	ttl := getBackfillReleaseTimeout(rb.cfg)
+	curTime := time.Now()
+	endTimeInt := curTime.Add(time.Hour).UnixNano()
+	startTimeInt := curTime.Add(-ttl).UnixNano()
+
+	// Filter out tickets that are fetched but not assigned within ttl time (ms).
+	idsInPendingReleases, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", proposedTicketIDs, startTimeInt, endTimeInt))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
+	}
+
+	idsIndexed, err := redis.Strings(redisConn.Do("SRANDMEMBER", allTickets, limit))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting random indexed ticket ids %v", err)
+	}
+
+	r := make(map[string]struct{}, len(idsIndexed))
+	for _, id := range idsIndexed {
+		r[id] = struct{}{}
+	}
+	for _, id := range idsInPendingReleases {
+		delete(r, id)
+	}
+
+	return r, nil
+}
+
 // GetIndexedTicketCount retrieves the current ticket count
 func (rb *redisBackend) GetIndexedTicketCount(ctx context.Context) (int, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)

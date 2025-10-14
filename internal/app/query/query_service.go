@@ -191,6 +191,34 @@ func (s *queryService) QueryBackfills(req *pb.QueryBackfillsRequest, responseSer
 	return nil
 }
 
+// QueryExpiredTickets get the expired tickets limited by the specified number
+func (s *queryService) QueryExpiredTickets(req *pb.QueryExpiredTicketsRequest, responseServer pb.QueryService_QueryExpiredTicketsServer) error {
+	ctx := responseServer.Context()
+	limit := int(req.GetLimit())
+
+	tickets, err := s.bc.store.GetExpiredTickets(ctx, limit)
+	if err != nil {
+		return err
+	}
+
+	pSize := getPageSize(s.cfg)
+	for start := 0; start < len(tickets); start += pSize {
+		end := start + pSize
+		if end > len(tickets) {
+			end = len(tickets)
+		}
+
+		err := responseServer.Send(&pb.QueryExpiredTicketsResponse{
+			Tickets: tickets[start:end],
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getPageSize(cfg config.View) int {
 	const (
 		name = "queryPageSize"

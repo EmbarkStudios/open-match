@@ -33,9 +33,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	QueryService_QueryTickets_FullMethodName   = "/openmatch.QueryService/QueryTickets"
-	QueryService_QueryTicketIds_FullMethodName = "/openmatch.QueryService/QueryTicketIds"
-	QueryService_QueryBackfills_FullMethodName = "/openmatch.QueryService/QueryBackfills"
+	QueryService_QueryTickets_FullMethodName        = "/openmatch.QueryService/QueryTickets"
+	QueryService_QueryTicketIds_FullMethodName      = "/openmatch.QueryService/QueryTicketIds"
+	QueryService_QueryBackfills_FullMethodName      = "/openmatch.QueryService/QueryBackfills"
+	QueryService_QueryExpiredTickets_FullMethodName = "/openmatch.QueryService/QueryExpiredTickets"
 )
 
 // QueryServiceClient is the client API for QueryService service.
@@ -60,6 +61,8 @@ type QueryServiceClient interface {
 	// BETA FEATURE WARNING:  This call and the associated Request and Response
 	// messages are not finalized and still subject to possible change or removal.
 	QueryBackfills(ctx context.Context, in *QueryBackfillsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryBackfillsResponse], error)
+	// QueryExpiredTickets get the expired tickets limited by the specified number
+	QueryExpiredTickets(ctx context.Context, in *QueryExpiredTicketsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryExpiredTicketsResponse], error)
 }
 
 type queryServiceClient struct {
@@ -127,6 +130,25 @@ func (c *queryServiceClient) QueryBackfills(ctx context.Context, in *QueryBackfi
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type QueryService_QueryBackfillsClient = grpc.ServerStreamingClient[QueryBackfillsResponse]
 
+func (c *queryServiceClient) QueryExpiredTickets(ctx context.Context, in *QueryExpiredTicketsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryExpiredTicketsResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &QueryService_ServiceDesc.Streams[3], QueryService_QueryExpiredTickets_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[QueryExpiredTicketsRequest, QueryExpiredTicketsResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type QueryService_QueryExpiredTicketsClient = grpc.ServerStreamingClient[QueryExpiredTicketsResponse]
+
 // QueryServiceServer is the server API for QueryService service.
 // All implementations should embed UnimplementedQueryServiceServer
 // for forward compatibility.
@@ -149,6 +171,8 @@ type QueryServiceServer interface {
 	// BETA FEATURE WARNING:  This call and the associated Request and Response
 	// messages are not finalized and still subject to possible change or removal.
 	QueryBackfills(*QueryBackfillsRequest, grpc.ServerStreamingServer[QueryBackfillsResponse]) error
+	// QueryExpiredTickets get the expired tickets limited by the specified number
+	QueryExpiredTickets(*QueryExpiredTicketsRequest, grpc.ServerStreamingServer[QueryExpiredTicketsResponse]) error
 }
 
 // UnimplementedQueryServiceServer should be embedded to have
@@ -166,6 +190,9 @@ func (UnimplementedQueryServiceServer) QueryTicketIds(*QueryTicketIdsRequest, gr
 }
 func (UnimplementedQueryServiceServer) QueryBackfills(*QueryBackfillsRequest, grpc.ServerStreamingServer[QueryBackfillsResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method QueryBackfills not implemented")
+}
+func (UnimplementedQueryServiceServer) QueryExpiredTickets(*QueryExpiredTicketsRequest, grpc.ServerStreamingServer[QueryExpiredTicketsResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method QueryExpiredTickets not implemented")
 }
 func (UnimplementedQueryServiceServer) testEmbeddedByValue() {}
 
@@ -220,6 +247,17 @@ func _QueryService_QueryBackfills_Handler(srv interface{}, stream grpc.ServerStr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type QueryService_QueryBackfillsServer = grpc.ServerStreamingServer[QueryBackfillsResponse]
 
+func _QueryService_QueryExpiredTickets_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(QueryExpiredTicketsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(QueryServiceServer).QueryExpiredTickets(m, &grpc.GenericServerStream[QueryExpiredTicketsRequest, QueryExpiredTicketsResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type QueryService_QueryExpiredTicketsServer = grpc.ServerStreamingServer[QueryExpiredTicketsResponse]
+
 // QueryService_ServiceDesc is the grpc.ServiceDesc for QueryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -241,6 +279,11 @@ var QueryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "QueryBackfills",
 			Handler:       _QueryService_QueryBackfills_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "QueryExpiredTickets",
+			Handler:       _QueryService_QueryExpiredTickets_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -424,46 +424,6 @@
         ]
       }
     },
-    "/v1/frontendservice/tickets/expired": {
-      "get": {
-        "summary": "GetExpiredTickets returns the ticket Ids corresponding to tickets outside the valid window",
-        "operationId": "FrontendService_GetExpiredTickets",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/openmatchGetExpiredTicketsResponse"
-            }
-          },
-          "404": {
-            "description": "Returned when the resource does not exist.",
-            "schema": {
-              "type": "string",
-              "format": "string"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "limit",
-            "description": "The limit on how many ticket Ids to return",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          }
-        ],
-        "tags": [
-          "FrontendService"
-        ]
-      }
-    },
     "/v1/frontendservice/tickets/{ticket_id}": {
       "get": {
         "summary": "GetTicket get the Ticket associated with the specified TicketId.",
@@ -708,18 +668,6 @@
         "ticket": {
           "$ref": "#/definitions/openmatchTicket",
           "description": "A Ticket object with SearchFields defined."
-        }
-      }
-    },
-    "openmatchGetExpiredTicketsResponse": {
-      "type": "object",
-      "properties": {
-        "ticket_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Expired TicketIds of generated Tickets to be deleted."
         }
       }
     },

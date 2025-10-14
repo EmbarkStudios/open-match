@@ -18,10 +18,7 @@ import (
 	"context"
 
 	"fmt"
-	"sync"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/cenkalti/backoff"
 	"github.com/gomodule/redigo/redis"
@@ -203,12 +200,6 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("SADD", allTickets, ticket.Id)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to add ticket to all tickets, id: %s", ticket.Id)
-		return status.Errorf(codes.Internal, "%v", err)
-	}
-
 	ticketTTL := getTicketReleaseTimeout(rb.cfg)
 	expiry := time.Now().Add(ticketTTL).UnixNano()
 	err = redisConn.Send("ZADD", allTicketsWithTTL, expiry, ticket.Id)
@@ -228,12 +219,6 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("SREM", allTickets, id)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %s", id)
-		return status.Errorf(codes.Internal, "%v", err)
-	}
-
 	err = redisConn.Send("ZREM", allTicketsWithTTL, id)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %s", id)
@@ -252,18 +237,11 @@ func (rb *redisBackend) DeindexTickets(ctx context.Context, ids []string) error 
 	defer handleConnectionClose(&redisConn)
 
 	args := make([]any, len(ids)+1)
-	args[0] = allTickets
+	args[0] = allTicketsWithTTL
 	for i, id := range ids {
 		args[i+1] = id
 	}
 
-	err = redisConn.Send("SREM", args...)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %v", ids)
-		return status.Errorf(codes.Internal, "%v", err)
-	}
-
-	args[0] = allTicketsWithTTL
 	err = redisConn.Send("ZREM", args...)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to remove ticket from all tickets, id: %v", ids)
@@ -653,18 +631,29 @@ func (rb *redisBackend) newConstantBackoffStrategy() backoff.BackOff {
 	return backoff.BackOff(backoffStrat)
 }
 
-// GetExpiredTicketIDs gets all ticket IDs which are expired
-func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context, limit int) ([]string, error) {
+// GetExpiredTickets gets all ticket IDs which are expired
+func (rb *redisBackend) GetExpiredTickets(ctx context.Context, limit int) ([]*pb.Ticket, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "GetExpiredBackfillIDs, failed to connect to redis: %v", err)
 	}
 	defer handleConnectionClose(&redisConn)
 
-	ticketTTL := getTicketReleaseTimeout(rb.cfg)
+	ttl := getBackfillReleaseTimeout(rb.cfg)
 	curTime := time.Now()
-	endTimeInt := curTime.Add(-ticketTTL).UnixNano() // anything before the now - ttl
-	startTimeInt := 0                                // unix epoc start time
+	endTimeInt := curTime.Add(time.Hour).UnixNano()
+	startTimeInt := curTime.Add(-ttl).UnixNano()
+
+	// Filter out tickets that are fetched but not assigned within ttl time (ms).
+	idsInPendingReleases, err := redis.Strings(redisConn.Do("ZRANGEBYSCORE", proposedTicketIDs, startTimeInt, endTimeInt))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error getting pending release %v", err)
+	}
+
+	ticketTTL := getTicketReleaseTimeout(rb.cfg)
+	curTime = time.Now()
+	endTimeInt = curTime.Add(-ticketTTL).UnixNano() // anything before the now - ttl
+	startTimeInt = 0                                // unix epoc start time
 
 	args := redis.Args{
 		allTicketsWithTTL, startTimeInt, endTimeInt,
@@ -679,91 +668,44 @@ func (rb *redisBackend) GetExpiredTicketIDs(ctx context.Context, limit int) ([]s
 		return nil, status.Errorf(codes.Internal, "error getting expired tickets %v", err)
 	}
 
-	return expiredTicketIds, nil
-}
-
-// DeleteTicketCompletely performs a set of operations to remove the ticket and all related entities.
-func (rb *redisBackend) DeleteTicketCompletely(ctx context.Context, id string) error {
-	m := rb.NewMutex(id)
-	err := m.Lock(ctx)
-	if err != nil {
-		return err
+	r := map[string]struct{}{}
+	for _, id := range expiredTicketIds {
+		r[id] = struct{}{}
 	}
 
-	defer func() {
-		if _, err = m.Unlock(context.Background()); err != nil {
-			logger.WithError(err).Error("error on mutex unlock")
+	for _, id := range idsInPendingReleases {
+		if _, ok := r[id]; ok {
+			delete(r, id)
 		}
-	}()
-
-	// 1. deindex ticket
-	err = rb.DeindexTicket(ctx, id)
-	if err != nil {
-		return err
 	}
 
-	// log the errors and try to perform as mush actions as possible
-
-	// 2. delete the ticket
-	err = rb.DeleteTicket(ctx, id)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error":       err.Error(),
-			"backfill_id": id,
-		}).Error("DeleteTicketCompletely - failed to DeleteTicket")
+	ids := make([]interface{}, 0, len(r))
+	for id := range r {
+		ids = append(ids, id)
 	}
 
-	// 3. delete ticket from pending release state
-	err = rb.DeleteTicketsFromPendingRelease(ctx, []string{id})
+	ticketBytes, err := redis.ByteSlices(redisConn.Do("MGET", ids...))
 	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error":     err.Error(),
-			"ticket_id": id,
-		}).Error("DeleteTicketCompletely - failed to DeleteTicketsFromPendingRelease")
+		err = errors.Wrapf(err, "failed to lookup tickets %v", ids)
+		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
-	return nil
-}
+	tickets := make([]*pb.Ticket, 0, len(ids))
 
-func (rb *redisBackend) cleanupTicketsWorker(ctx context.Context, ticketIDsCh <-chan string, wg *sync.WaitGroup) {
-	var err error
-	for id := range ticketIDsCh {
-		logger.WithFields(logrus.Fields{
-			"ticket_id": id,
-		}).Info("cleanupTicketsWorker - starting")
-		err = rb.DeleteTicketCompletely(ctx, id)
-		if err != nil {
-			logger.WithFields(logrus.Fields{
-				"error":     err.Error(),
-				"ticket_id": id,
-			}).Error("CleanupTickets")
+	for i, b := range ticketBytes {
+		// Tickets may be deleted by the time we read it from redis.
+		if b != nil {
+			t := &pb.Ticket{}
+			err = proto.Unmarshal(b, t)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to unmarshal ticket from redis, key %s", ids[i])
+				return nil, status.Errorf(codes.Internal, "%v", err)
+			}
+			tickets = append(tickets, t)
 		}
-		wg.Done()
-	}
-}
-
-func (rb *redisBackend) CleanupTickets(ctx context.Context) error {
-	expiredTicketIDs, err := rb.GetExpiredTicketIDs(ctx, 0)
-	if err != nil {
-		return err
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(expiredTicketIDs))
-	ticketIDsCh := make(chan string, len(expiredTicketIDs))
-
-	for w := 1; w <= 3; w++ {
-		go rb.cleanupTicketsWorker(ctx, ticketIDsCh, &wg)
-	}
-
-	for _, id := range expiredTicketIDs {
-		ticketIDsCh <- id
-	}
-	close(ticketIDsCh)
-
-	wg.Wait()
-
-	return nil
+	return tickets, nil
 }
 
 // TODO: add cache the backoff object

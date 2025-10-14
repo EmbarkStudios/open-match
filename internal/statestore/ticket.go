@@ -101,17 +101,17 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 
 	// if a ticket is assigned, its given an TTL and automatically de-indexed
 	if ticket.Assignment == nil {
-		ticketTTL := getTicketReleaseTimeout(rb.cfg)
-		expiry := time.Now().Add(ticketTTL).UnixNano()
-
-		expiredKey, err := rb.checkIfExpired(ctx, id)
+		expiredKey, err := rb.checkIfExpired(ctx, redisConn, id)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to check if ticket is expired, id: %s", id)
 			return nil, err
 		}
 
+		ticketTTL := getTicketReleaseTimeout(rb.cfg)
+		expiresAt := time.Now().Add(ticketTTL).UnixNano()
+
 		if !expiredKey {
-			_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiry, id)
+			_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiresAt, id)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to update score for ticket id: %s", id)
 				return nil, status.Errorf(codes.Internal, "%v", err)
@@ -122,54 +122,9 @@ func (rb *redisBackend) GetTicket(ctx context.Context, id string) (*pb.Ticket, e
 	return ticket, nil
 }
 
-func (rb *redisBackend) UpdateIndexedTicketTTL(ctx context.Context, ticketId string) error {
-	m := rb.NewMutex(ticketId)
+func (rb *redisBackend) checkIfExpired(ctx context.Context, redisConn redis.Conn, id string) (bool, error) {
 	//  TODO: should we add a timeout to this acquisition
-	err := m.Lock(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if _, err = m.Unlock(context.Background()); err != nil {
-			logger.WithError(err).Error("error on mutex unlock")
-		}
-	}()
-
-	redisConn, err := rb.redisPool.GetContext(ctx)
-	if err != nil {
-		return status.Errorf(codes.Unavailable, "checkIfExpired, id: %s, failed to connect to redis: %v", ticketId, err)
-	}
-	defer handleConnectionClose(&redisConn)
-
-	score, err := redis.Float64(redisConn.Do("ZSCORE", allTicketsWithTTL, ticketId))
-	if errors.Is(err, redis.ErrNil) {
-		logger.WithError(err).Errorf("Ticket id: %s not found", ticketId)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if score <= float64(time.Now().UnixNano()) {
-		return errors.New("ticket is already expired")
-	}
-
-	ticketTTL := getTicketReleaseTimeout(rb.cfg)
-	expiry := time.Now().Add(ticketTTL).UnixNano()
-
-	_, err = redisConn.Do("ZADD", allTicketsWithTTL, "XX", "CH", expiry, ticketId)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to update score for ticket id: %s", ticketId)
-		return status.Errorf(codes.Internal, "%v", err)
-	}
-
-	return nil
-}
-
-func (rb *redisBackend) checkIfExpired(ctx context.Context, id string) (bool, error) {
 	m := rb.NewMutex(id)
-	//  TODO: should we add a timeout to this acquisition
 	err := m.Lock(ctx)
 	if err != nil {
 		return false, err
@@ -180,12 +135,6 @@ func (rb *redisBackend) checkIfExpired(ctx context.Context, id string) (bool, er
 			logger.WithError(err).Error("error on mutex unlock")
 		}
 	}()
-
-	redisConn, err := rb.redisPool.GetContext(ctx)
-	if err != nil {
-		return false, status.Errorf(codes.Unavailable, "checkIfExpired, id: %s, failed to connect to redis: %v", id, err)
-	}
-	defer handleConnectionClose(&redisConn)
 
 	score, err := redis.Float64(redisConn.Do("ZSCORE", allTicketsWithTTL, id))
 	if errors.Is(err, redis.ErrNil) {
@@ -459,25 +408,27 @@ func (rb *redisBackend) GetTickets(ctx context.Context, ids []string) ([]*pb.Tic
 			}
 			r = append(r, t)
 
-			if t.Assignment == nil {
-				// if a ticket is assigned, its given an TTL and automatically de-indexed
-				expiredKey, err := rb.checkIfExpired(ctx, t.Id)
-				if err != nil {
-					err = errors.Wrapf(err, "failed to check ticket expiry, %v", err)
-					return nil, status.Errorf(codes.Internal, "%v", err)
-				}
+			if t.Assignment != nil {
+				continue
+			}
 
-				if expiredKey {
-					continue
-				}
+			// if a ticket is assigned, its given an TTL and automatically de-indexed
+			expiredKey, err := rb.checkIfExpired(ctx, redisConn, t.Id)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to check ticket expiry, %v", err)
+				return nil, status.Errorf(codes.Internal, "%v", err)
+			}
 
-				expiry := time.Now().Add(ticketTTL).UnixNano()
-				// update the indexed ticket's ttl. careful this might become slow.
-				err = redisConn.Send("ZADD", allTicketsWithTTL, "XX", "CH", expiry, t.Id)
-				if err != nil {
-					err = errors.Wrapf(err, "failed to update ttl for ticket id: %s", t.Id)
-					return nil, status.Errorf(codes.Internal, "%v", err)
-				}
+			if expiredKey {
+				continue
+			}
+
+			expiry := time.Now().Add(ticketTTL).UnixNano()
+			// update the indexed ticket's ttl. careful this might become slow.
+			err = redisConn.Send("ZADD", allTicketsWithTTL, "XX", "CH", expiry, t.Id)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to update ttl for ticket id: %s", t.Id)
+				return nil, status.Errorf(codes.Internal, "%v", err)
 			}
 		}
 	}

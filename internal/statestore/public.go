@@ -127,6 +127,12 @@ type Service interface {
 
 	// GetIndexedTicketCount returns the current count of indexed tickets
 	GetIndexedTicketCount(ctx context.Context) (int, error)
+
+	// GetExpiredTickets gets all tickets which are expired
+	GetExpiredTickets(ctx context.Context, limit int) ([]*pb.Ticket, error)
+
+	// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
+	GetIndexedIDSetWithTTL(ctx context.Context, limit int) (map[string]struct{}, error)
 }
 
 // New creates a Service based on the configuration.

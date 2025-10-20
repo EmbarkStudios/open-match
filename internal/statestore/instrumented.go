@@ -210,8 +210,23 @@ func (is *instrumentedService) DeleteBackfillCompletely(ctx context.Context, id 
 	return is.s.DeleteBackfillCompletely(ctx, id)
 }
 
+// GetIndexedTicketCount returns the current count of indexed tickets
 func (is *instrumentedService) GetIndexedTicketCount(ctx context.Context) (int, error) {
 	ctx, span := trace.StartSpan(context.Background(), "statestore/instrumented.GetIndexedTicketCount")
 	defer span.End()
 	return is.s.GetIndexedTicketCount(ctx)
+}
+
+// GetExpiredTickets gets all ticket IDs which are expired
+func (is *instrumentedService) GetExpiredTickets(ctx context.Context, limit int) ([]*pb.Ticket, error) {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetExpiredTickets")
+	defer span.End()
+	return is.s.GetExpiredTickets(ctx, limit)
+}
+
+// GetIndexedIDSetWithTTL returns the ids of all tickets currently indexed but within a given TTL.
+func (is *instrumentedService) GetIndexedIDSetWithTTL(ctx context.Context, limit int) (map[string]struct{}, error) {
+	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.GetIndexedIDSetWithTTL")
+	defer span.End()
+	return is.s.GetIndexedIDSetWithTTL(ctx, 0)
 }

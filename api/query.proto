@@ -89,6 +89,15 @@ message QueryBackfillsResponse {
   repeated Backfill backfills = 1;
 }
 
+message QueryExpiredTicketsRequest {
+  int32 limit = 1;
+}
+
+message QueryExpiredTicketsResponse {
+  // Tickets that meet all the filtering criteria requested by the pool.
+  repeated Ticket tickets = 1;
+}
+
 // The QueryService service implements helper APIs for Match Function to query Tickets from state storage.
 service QueryService {
   // QueryTickets gets a list of Tickets that match all Filters of the input Pool.
@@ -119,6 +128,15 @@ service QueryService {
   rpc QueryBackfills(QueryBackfillsRequest) returns (stream QueryBackfillsResponse) {
     option (google.api.http) = {
       post: "/v1/queryservice/backfills:query"
+      body: "*"
+    };
+  }
+
+
+  // QueryExpiredTickets get the expired tickets limited by the specified number
+  rpc QueryExpiredTickets(QueryExpiredTicketsRequest) returns (stream QueryExpiredTicketsResponse) {
+    option (google.api.http) = {
+      post: "/v1/queryservice/tickets:expired"
       body: "*"
     };
   }

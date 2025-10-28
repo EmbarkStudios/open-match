@@ -86,6 +86,19 @@ func doCreateTicket(ctx context.Context, req *pb.CreateTicketRequest, store stat
 
 	err = store.IndexTicket(ctx, ticket)
 	if err != nil {
+		go func() {
+			deleteCtx, span := trace.StartSpan(context.Background(), "open-match/frontend.DeleteOrphanTicketLazy")
+			defer span.End()
+
+			// Cleanup the ticket as it won't be visible to the client
+			deleteErr := store.DeleteTicket(deleteCtx, ticket.Id)
+			if deleteErr != nil {
+				logger.WithFields(logrus.Fields{
+					"error": deleteErr.Error(),
+					"id":    ticket.Id,
+				}).Error("failed to delete unindexed the ticket")
+			}
+		}()
 		return nil, err
 	}
 

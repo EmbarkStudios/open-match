@@ -34,7 +34,7 @@ import (
 )
 
 func TestCreateBackfillLastAckTime(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -56,7 +56,7 @@ func TestCreateBackfillLastAckTime(t *testing.T) {
 }
 
 func TestCreateBackfill(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -118,7 +118,7 @@ func TestCreateBackfill(t *testing.T) {
 }
 
 func TestUpdateExistingBackfillNoError(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -178,7 +178,7 @@ func TestUpdateExistingBackfillNoError(t *testing.T) {
 }
 
 func TestUpdateBackfillDoNotExistCanNotUpdate(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -208,7 +208,7 @@ func TestUpdateBackfillDoNotExistCanNotUpdate(t *testing.T) {
 }
 
 func TestUpdateBackfillExpiredBackfillErrExpected(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -236,7 +236,7 @@ func TestUpdateBackfillExpiredBackfillErrExpected(t *testing.T) {
 }
 
 func TestUpdateBackfillExpiredContextErrExpected(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -254,7 +254,7 @@ func TestUpdateBackfillExpiredContextErrExpected(t *testing.T) {
 }
 
 func TestGetBackfill(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -341,7 +341,7 @@ func TestGetBackfill(t *testing.T) {
 }
 
 func TestDeleteBackfill(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -424,7 +424,7 @@ func TestDeleteBackfill(t *testing.T) {
 // TestUpdateAcknowledgmentTimestampLifecycle test statestore functions - UpdateAcknowledgmentTimestamp, GetExpiredBackfillIDs
 // and deleteExpiredBackfillID
 func TestUpdateAcknowledgmentTimestampLifecycle(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 
 	service := New(cfg)
@@ -480,7 +480,7 @@ func TestUpdateAcknowledgmentTimestampLifecycle(t *testing.T) {
 }
 
 func TestUpdateAcknowledgmentTimestamp(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 
 	startTime := time.Now()
@@ -511,7 +511,7 @@ func TestUpdateAcknowledgmentTimestamp(t *testing.T) {
 }
 
 func TestUpdateAcknowledgmentTimestamptExpiredBackfillErrExpected(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -535,7 +535,7 @@ func TestUpdateAcknowledgmentTimestamptExpiredBackfillErrExpected(t *testing.T) 
 }
 
 func TestUpdateAcknowledgmentTimestampConnectionError(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -560,7 +560,7 @@ func createInvalidRedisConfig() config.View {
 // TestGetExpiredBackfillIDs test statestore function GetExpiredBackfillIDs
 func TestGetExpiredBackfillIDs(t *testing.T) {
 	// Prepare expired and normal BackfillIds in a Redis Sorted Set
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 
 	expID := "expired"
@@ -584,7 +584,7 @@ func TestGetExpiredBackfillIDs(t *testing.T) {
 }
 
 func TestIndexBackfill(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -617,7 +617,7 @@ func TestIndexBackfill(t *testing.T) {
 }
 
 func TestDeindexBackfill(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -654,7 +654,7 @@ func TestDeindexBackfill(t *testing.T) {
 }
 
 func TestGetIndexedBackfills(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -705,7 +705,7 @@ func generateBackfills(ctx context.Context, t *testing.T, service Service, amoun
 
 func BenchmarkCleanupBackfills(b *testing.B) {
 	t := &testing.T{}
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -743,7 +743,7 @@ func BenchmarkCleanupBackfills(b *testing.B) {
 }
 
 func TestCleanupBackfills(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)

@@ -86,7 +86,28 @@ func doCreateTicket(ctx context.Context, req *pb.CreateTicketRequest, store stat
 
 	err = store.IndexTicket(ctx, ticket)
 	if err != nil {
-		doDeleteTicket(ctx, ticket.Id, store)
+		// Schedule a ticket deletion on the background
+		go func() {
+			ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupNewTicket")
+			defer span.End()
+
+			err := store.DeleteTicket(ctx, ticket.Id)
+			if err != nil {
+				logger.WithFields(logrus.Fields{
+					"error": err.Error(),
+					"id":    ticket.Id,
+				}).Error("failed to delete the recently created ticket")
+			}
+
+			err = store.DeleteTicketsFromPendingRelease(ctx, []string{ticket.Id})
+			if err != nil {
+				logger.WithFields(logrus.Fields{
+					"error": err.Error(),
+					"id":    ticket.Id,
+				}).Error("failed to delete the recently created ticket from pendingRelease")
+			}
+		}()
+
 		return nil, err
 	}
 
@@ -137,7 +158,20 @@ func doCreateBackfill(ctx context.Context, req *pb.CreateBackfillRequest, store 
 	}
 	err = store.IndexBackfill(ctx, backfill)
 	if err != nil {
-		store.DeleteBackfillCompletely(ctx, backfill.Id)
+		// Schedule a backfill deletion on a background
+		go func() {
+			ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupNewBackfill")
+			defer span.End()
+
+			err := store.DeleteBackfillCompletely(ctx, backfill.Id)
+			if err != nil {
+				logger.WithFields(logrus.Fields{
+					"error": err.Error(),
+					"id":    backfill.Id,
+				}).Error("failed to delete the recently created backfill")
+			}
+		}()
+
 		return nil, err
 	}
 	return backfill, nil

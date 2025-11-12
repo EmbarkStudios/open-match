@@ -86,6 +86,7 @@ func doCreateTicket(ctx context.Context, req *pb.CreateTicketRequest, store stat
 
 	err = store.IndexTicket(ctx, ticket)
 	if err != nil {
+		doDeleteTicket(ctx, ticket.Id, store)
 		return nil, err
 	}
 
@@ -136,6 +137,7 @@ func doCreateBackfill(ctx context.Context, req *pb.CreateBackfillRequest, store 
 	}
 	err = store.IndexBackfill(ctx, backfill)
 	if err != nil {
+		store.DeleteBackfillCompletely(ctx, backfill.Id)
 		return nil, err
 	}
 	return backfill, nil

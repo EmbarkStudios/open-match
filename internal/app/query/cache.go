@@ -176,6 +176,25 @@ func updateTicketCache(store statestore.Service, value interface{}) error {
 		tickets[t.Id] = t
 	}
 
+	// do not block current run
+	go func() {
+		// thought: after cache update, the num of tickets in cache should match the currentAll
+		// therefore anything in currentAll but not in tickets is likely a ticket
+		// who's ttl has expired and has been deleted but remains in index
+		expiredTicketIds := []string{}
+		for id := range currentAll {
+			if _, ok := tickets[id]; !ok {
+				expiredTicketIds = append(expiredTicketIds, id)
+			}
+		}
+
+		// delete from index cache
+		err = store.DeindexTickets(context.Background(), expiredTicketIds)
+		if err != nil {
+			logger.Errorf("Error deindexing orphaned tickets: %v", err)
+		}
+	}()
+
 	stats.Record(context.Background(), cacheTotalItems.M(int64(previousCount)))
 	stats.Record(context.Background(), totalActiveTickets.M(int64(len(currentAll))))
 	stats.Record(context.Background(), cacheFetchedItems.M(int64(len(toFetch))))

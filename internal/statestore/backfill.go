@@ -217,6 +217,12 @@ func (rb *redisBackend) UpdateBackfill(ctx context.Context, backfill *pb.Backfil
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
+	_, err = redisConn.Do("EXPIRE", backfill.GetId(), getBackfillReleaseTimeoutFraction(rb.cfg))
+	if err != nil {
+		err = errors.Wrapf(err, "failed to set the TTL for backfill, id: %s", backfill.GetId())
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
 	return nil
 }
 

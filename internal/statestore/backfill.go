@@ -217,7 +217,7 @@ func (rb *redisBackend) UpdateBackfill(ctx context.Context, backfill *pb.Backfil
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
-	_, err = redisConn.Do("EXPIRE", backfill.GetId(), getBackfillReleaseTimeoutFraction(rb.cfg))
+	_, err = redisConn.Do("EXPIRE", backfill.GetId(), getBackfillReleaseTimeout(rb.cfg))
 	if err != nil {
 		err = errors.Wrapf(err, "failed to set the TTL for backfill, id: %s", backfill.GetId())
 		return status.Errorf(codes.Internal, "%v", err)
@@ -345,16 +345,22 @@ func (rb *redisBackend) UpdateAcknowledgmentTimestamp(ctx context.Context, id st
 		return status.Errorf(codes.FailedPrecondition, "can not acknowledge an expired backfill, id: %s", id)
 	}
 
-	return doUpdateAcknowledgmentTimestamp(redisConn, id)
+	return doUpdateAcknowledgmentTimestamp(redisConn, id, getBackfillReleaseTimeout(rb.cfg))
 }
 
-func doUpdateAcknowledgmentTimestamp(conn redis.Conn, backfillID string) error {
+func doUpdateAcknowledgmentTimestamp(conn redis.Conn, backfillID string, keyTTL time.Duration) error {
 	currentTime := time.Now().UnixNano()
 
 	_, err := conn.Do("ZADD", backfillLastAckTime, currentTime, backfillID)
 	if err != nil {
 		return status.Errorf(codes.Internal, "%v",
 			errors.Wrap(err, "failed to store backfill's last acknowledgement time"))
+	}
+
+	_, err = conn.Do("EXPIRE", backfillID, keyTTL)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to set the TTL for backfill, id: %s", backfillID)
+		return status.Errorf(codes.Internal, "%v", err)
 	}
 
 	return nil

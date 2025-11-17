@@ -477,20 +477,6 @@ func (rb *redisBackend) GetIndexedBackfills(ctx context.Context) (map[string]int
 	return r, nil
 }
 
-func getBackfillDuration(cfg config.View) time.Duration {
-	const (
-		name = "backfillDuration"
-		// Default TTL for the backfill. Based on the current game server specs
-		defaultBackfillDuration time.Duration = 90 * time.Minute
-	)
-
-	if !cfg.IsSet(name) {
-		return defaultBackfillDuration
-	}
-
-	return cfg.GetDuration(name)
-}
-
 func getBackfillReleaseTimeout(cfg config.View) time.Duration {
 	const (
 		name = "pendingReleaseTimeout"

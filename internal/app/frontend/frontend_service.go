@@ -510,21 +510,13 @@ func cleanupStaleTicket(id string, store statestore.Service) {
 			"id":    id,
 		}).Error("failed to delete the recently created ticket")
 	}
-
-	err = store.DeleteTicketsFromPendingRelease(ctx, []string{id})
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-			"id":    id,
-		}).Error("failed to delete the recently created ticket from pendingRelease")
-	}
 }
 
 func cleanupStaleBackfill(backfillId string, store statestore.Service) {
 	ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupStaleBackfill")
 	defer span.End()
 
-	err := store.DeleteBackfillCompletely(ctx, backfillId)
+	err := store.DeindexBackfill(ctx, backfillId)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err.Error(),

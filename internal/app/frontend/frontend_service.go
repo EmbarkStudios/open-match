@@ -516,7 +516,7 @@ func cleanupStaleBackfill(backfillId string, store statestore.Service) {
 	ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupStaleBackfill")
 	defer span.End()
 
-	err := store.DeindexBackfill(ctx, backfillId)
+	err := store.DeleteBackfill(ctx, backfillId)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err.Error(),

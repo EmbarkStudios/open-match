@@ -217,6 +217,13 @@ func (rb *redisBackend) UpdateBackfill(ctx context.Context, backfill *pb.Backfil
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
+	keyTTL := int64(getBackfillReleaseTimeout(rb.cfg).Seconds() + 60)
+	_, err = redisConn.Do("EXPIRE", backfill.GetId(), keyTTL)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to set the TTL for backfill, id: %s", backfill.GetId())
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
 	return nil
 }
 
@@ -339,7 +346,19 @@ func (rb *redisBackend) UpdateAcknowledgmentTimestamp(ctx context.Context, id st
 		return status.Errorf(codes.FailedPrecondition, "can not acknowledge an expired backfill, id: %s", id)
 	}
 
-	return doUpdateAcknowledgmentTimestamp(redisConn, id)
+	err = doUpdateAcknowledgmentTimestamp(redisConn, id)
+	if err != nil {
+		return err
+	}
+
+	keyTTL := int64(getBackfillReleaseTimeout(rb.cfg).Seconds() + 60)
+	_, err = redisConn.Do("EXPIRE", id, keyTTL)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to set the TTL for backfill, id: %s", id)
+		return status.Errorf(codes.Internal, "%v", err)
+	}
+
+	return nil
 }
 
 func doUpdateAcknowledgmentTimestamp(conn redis.Conn, backfillID string) error {

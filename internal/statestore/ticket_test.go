@@ -28,6 +28,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/rs/xid"
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +39,7 @@ import (
 )
 
 func TestStatestoreSetup(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -46,7 +47,7 @@ func TestStatestoreSetup(t *testing.T) {
 }
 
 func TestTicketLifecycle(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -104,7 +105,7 @@ func TestTicketLifecycle(t *testing.T) {
 }
 
 func TestGetAssignmentBeforeSet(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -123,7 +124,7 @@ func TestGetAssignmentBeforeSet(t *testing.T) {
 }
 
 func TestGetAssignmentNormal(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -171,7 +172,7 @@ func TestGetAssignmentNormal(t *testing.T) {
 }
 
 func TestUpdateAssignments(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -376,7 +377,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestHealthCheck(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -395,7 +396,7 @@ func TestHealthCheck(t *testing.T) {
 }
 
 func TestCreateTicket(t *testing.T) {
-	cfg, closer := createRedis(t, true, "")
+	cfg, closer, _ := createRedis(t, true, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -453,7 +454,7 @@ func TestCreateTicket(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -530,8 +531,51 @@ func TestGetTicket(t *testing.T) {
 	require.Contains(t, status.Convert(err).Message(), "GetTicket, id: 12345, failed to connect to redis:")
 }
 
+func TestGetTicketWithTTL(t *testing.T) {
+	cfg, closer, fastForward := createRedis(t, false, "")
+	defer closer()
+	service := New(cfg)
+
+	require.NotNil(t, service)
+	defer service.Close()
+	ctx := utilTesting.NewContext(t)
+	ticketId := "mockTicketID"
+
+	// Given
+	err := service.CreateTicket(ctx, &pb.Ticket{
+		Id:         ticketId,
+		Assignment: &pb.Assignment{Connection: "2"},
+	})
+	require.NoError(t, err)
+
+	// When
+	ticketActual, errActual := service.GetTicket(ctx, ticketId)
+
+	// Then
+	require.NoError(t, errActual)
+	require.NotNil(t, ticketActual)
+
+	// And on TTL Expiry - default TTL for tests is a second
+	fastForward(2 * time.Second)
+	ticket, err := service.GetTicket(ctx, ticketId)
+
+	require.Error(t, err)
+	require.Equal(t, codes.NotFound.String(), status.Convert(err).Code().String())
+	assert.Nil(t, ticket)
+
+	// pass an expired context, err expected
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	service = New(cfg)
+	res, err := service.GetTicket(ctx, ticketId)
+	require.Error(t, err)
+	require.Nil(t, res)
+	require.Equal(t, codes.Unavailable.String(), status.Convert(err).Code().String())
+	require.Contains(t, status.Convert(err).Message(), "GetTicket, id: mockTicketID, failed to connect to redis:")
+}
+
 func TestDeleteTicket(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -600,7 +644,7 @@ func TestDeleteTicket(t *testing.T) {
 }
 
 func TestDeleteTickets(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -669,7 +713,7 @@ func TestDeleteTickets(t *testing.T) {
 }
 
 func TestIndexTicket(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -701,7 +745,7 @@ func TestIndexTicket(t *testing.T) {
 }
 
 func TestDeindexTicket(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -738,7 +782,7 @@ func TestDeindexTicket(t *testing.T) {
 }
 
 func TestDeindexTickets(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -775,7 +819,7 @@ func TestDeindexTickets(t *testing.T) {
 }
 
 func TestGetIndexedIDSet(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -820,7 +864,7 @@ func TestGetIndexedIDSet(t *testing.T) {
 }
 
 func TestGetTickets(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -853,7 +897,7 @@ func TestGetTickets(t *testing.T) {
 }
 
 func TestDeleteTicketsFromPendingRelease(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -904,7 +948,7 @@ func TestDeleteTicketsFromPendingRelease(t *testing.T) {
 }
 
 func TestReleaseAllTickets(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -951,7 +995,7 @@ func TestReleaseAllTickets(t *testing.T) {
 }
 
 func TestAddTicketsToPendingRelease(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -995,7 +1039,7 @@ func TestAddTicketsToPendingRelease(t *testing.T) {
 }
 
 func TestGetIndexedTicketCount(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)
@@ -1028,7 +1072,7 @@ func TestGetIndexedTicketCount(t *testing.T) {
 }
 
 func testConnect(t *testing.T, withSentinel bool, withPassword string) {
-	cfg, closer := createRedis(t, withSentinel, withPassword)
+	cfg, closer, _ := createRedis(t, withSentinel, withPassword)
 	defer closer()
 	store := New(cfg)
 	defer store.Close()
@@ -1048,7 +1092,7 @@ func testConnect(t *testing.T, withSentinel bool, withPassword string) {
 	require.Equal(t, "PONG", rply)
 }
 
-func createRedis(t *testing.T, withSentinel bool, withPassword string) (config.View, func()) {
+func createRedis(t *testing.T, withSentinel bool, withPassword string) (config.View, func(), func(time.Duration)) {
 	cfg := viper.New()
 	closerFuncs := []func(){}
 	mredis := miniredis.NewMiniRedis()
@@ -1071,6 +1115,7 @@ func createRedis(t *testing.T, withSentinel bool, withPassword string) (config.V
 	cfg.Set("backoff.maxElapsedTime", 100*time.Millisecond)
 	cfg.Set(telemetry.ConfigNameEnableMetrics, true)
 	cfg.Set("assignedDeleteTimeout", 1000*time.Millisecond)
+	cfg.Set("ticketDeleteTimeout", time.Second)
 
 	if withSentinel {
 		s := minisentinel.NewSentinel(mredis)
@@ -1110,7 +1155,7 @@ func createRedis(t *testing.T, withSentinel bool, withPassword string) (config.V
 		for _, closer := range closerFuncs {
 			closer()
 		}
-	}
+	}, mredis.FastForward
 }
 
 // nolint: unparam

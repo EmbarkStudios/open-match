@@ -86,7 +86,6 @@ func doCreateTicket(ctx context.Context, req *pb.CreateTicketRequest, store stat
 
 	err = store.IndexTicket(ctx, ticket)
 	if err != nil {
-		go cleanupStaleTicket(ticket.Id, store)
 		return nil, err
 	}
 
@@ -137,7 +136,6 @@ func doCreateBackfill(ctx context.Context, req *pb.CreateBackfillRequest, store 
 	}
 	err = store.IndexBackfill(ctx, backfill)
 	if err != nil {
-		go cleanupStaleBackfill(backfill.Id, store)
 		return nil, err
 	}
 	return backfill, nil
@@ -497,30 +495,4 @@ func (s *frontendService) GetTickets(ctx context.Context, req *pb.GetTicketsRequ
 	resp.Tickets = tickets
 
 	return resp, nil
-}
-
-func cleanupStaleTicket(id string, store statestore.Service) {
-	ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupStaleTicket")
-	defer span.End()
-
-	err := store.DeleteTicket(ctx, id)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-			"id":    id,
-		}).Error("failed to delete the recently created ticket")
-	}
-}
-
-func cleanupStaleBackfill(backfillId string, store statestore.Service) {
-	ctx, span := trace.StartSpan(context.Background(), "open-match/frontend.cleanupStaleBackfill")
-	defer span.End()
-
-	err := store.DeleteBackfill(ctx, backfillId)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-			"id":    backfillId,
-		}).Error("failed to delete the recently created backfill")
-	}
 }

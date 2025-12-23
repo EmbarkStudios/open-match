@@ -128,6 +128,55 @@
         ]
       }
     },
+    "/v1/queryservice/tickets:expired": {
+      "post": {
+        "summary": "QueryExpiredTickets get the expired tickets limited by the specified number",
+        "operationId": "QueryService_QueryExpiredTickets",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/openmatchQueryExpiredTicketsResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of openmatchQueryExpiredTicketsResponse"
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/openmatchQueryExpiredTicketsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "QueryService"
+        ]
+      }
+    },
     "/v1/queryservice/tickets:query": {
       "post": {
         "summary": "QueryTickets gets a list of Tickets that match all Filters of the input Pool.\n  - If the Pool contains no Filters, QueryTickets will return all Tickets in the state storage.\nQueryTickets pages the Tickets by `queryPageSize` and stream back responses.\n  - queryPageSize is default to 1000 if not set, and has a minimum of 10 and maximum of 10000.",
@@ -334,6 +383,28 @@
         }
       },
       "description": "BETA FEATURE WARNING:  This Request messages are not finalized and \nstill subject to possible change or removal."
+    },
+    "openmatchQueryExpiredTicketsRequest": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "openmatchQueryExpiredTicketsResponse": {
+      "type": "object",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/openmatchTicket"
+          },
+          "description": "Tickets that meet all the filtering criteria requested by the pool."
+        }
+      }
     },
     "openmatchQueryTicketIdsRequest": {
       "type": "object",

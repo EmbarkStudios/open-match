@@ -289,10 +289,10 @@ func doWatchAssignments(ctx context.Context, id string, sender func(*pb.Assignme
 	callback := func(assignment *pb.Assignment) error {
 		select {
 		case <-ctx.Done():
-			return status.Errorf(codes.Aborted, ctx.Err().Error())
+			return status.Error(codes.Aborted, ctx.Err().Error())
 		default:
 			if ctx.Err() != nil {
-				return status.Errorf(codes.Aborted, ctx.Err().Error())
+				return status.Error(codes.Aborted, ctx.Err().Error())
 			}
 
 			if (currAssignment == nil && assignment != nil) || !proto.Equal(currAssignment, assignment) {
@@ -303,7 +303,7 @@ func doWatchAssignments(ctx context.Context, id string, sender func(*pb.Assignme
 
 				err := sender(currAssignment)
 				if err != nil {
-					return status.Errorf(codes.Aborted, err.Error())
+					return status.Error(codes.Aborted, err.Error())
 				}
 			}
 			return nil
@@ -396,7 +396,7 @@ func (s *frontendService) GetBackfillTickets(ctx context.Context, req *pb.GetBac
 
 	err := m.Lock(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, err.Error())
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 	defer func() {
 		if _, err = m.Unlock(context.Background()); err != nil {

@@ -53,6 +53,7 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		return err
 	}
 
+	limit := int(req.GetLimit())
 	var results []*pb.Ticket
 	err = s.tc.request(ctx, func(value interface{}) {
 		tickets, ok := value.(map[string]*pb.Ticket)
@@ -64,6 +65,10 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		for _, ticket := range tickets {
 			if pf.In(ticket) {
 				results = append(results, ticket)
+			}
+
+			if limit > 0 && len(results) >= limit {
+				break
 			}
 		}
 	})

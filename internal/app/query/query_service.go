@@ -65,10 +65,9 @@ func (s *queryService) QueryTickets(req *pb.QueryTicketsRequest, responseServer 
 		for _, ticket := range tickets {
 			if pf.In(ticket) {
 				results = append(results, ticket)
-			}
-
-			if limit > 0 && len(results) >= limit {
-				break
+				if limit > 0 && len(results) >= limit {
+					break
+				}
 			}
 		}
 	})

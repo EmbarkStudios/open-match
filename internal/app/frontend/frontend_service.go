@@ -372,6 +372,10 @@ func (s *frontendService) AcknowledgeBackfill(ctx context.Context, req *pb.Ackno
 			}
 		}
 
+		if err = s.store.DeleteTicketsFromPendingRelease(ctx, associatedTickets); err != nil {
+			logger.WithError(err).WithField("ticket_ids", associatedTickets).Error("failed to delete tickets from pending release after updating assignment during backfill ack")
+		}
+
 		// Remove all tickets associated with backfill, because unassigned tickets are not found only
 		err = s.store.UpdateBackfill(ctx, bf, []string{})
 		if err != nil {

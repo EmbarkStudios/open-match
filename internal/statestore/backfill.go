@@ -177,7 +177,7 @@ func (rb *redisBackend) DeleteBackfill(ctx context.Context, id string) error {
 	}
 
 	if value == 0 {
-		return status.Errorf(codes.NotFound, "Backfill id: %s not found", id)
+		// backfill not found, continue with removing from index.
 	}
 
 	return rb.deleteExpiredBackfillID(redisConn, id)

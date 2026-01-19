@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewMutex(t *testing.T) {
-	cfg, closer := createRedis(t, false, "")
+	cfg, closer, _ := createRedis(t, false, "")
 	defer closer()
 	service := New(cfg)
 	require.NotNil(t, service)

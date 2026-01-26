@@ -201,7 +201,7 @@ func (rb *redisBackend) DeindexTickets(ctx context.Context, ids []string) error 
 	return nil
 }
 
-// GetIndexedIds returns the ids of all tickets currently indexed.
+// GetIndexedIDSet returns the ids of all tickets currently indexed.
 func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{}, error) {
 	redisConn, err := rb.redisPool.GetContext(ctx)
 	if err != nil {
@@ -209,7 +209,7 @@ func (rb *redisBackend) GetIndexedIDSet(ctx context.Context) (map[string]struct{
 	}
 	defer handleConnectionClose(&redisConn)
 
-	ttl := getBackfillReleaseTimeout(rb.cfg)
+	ttl := getPendingReleaseTimeout(rb.cfg)
 	curTime := time.Now()
 	endTimeInt := curTime.Add(time.Hour).UnixNano()
 	startTimeInt := curTime.Add(-ttl).UnixNano()
@@ -540,6 +540,21 @@ func getAssignedDeleteTimeout(cfg config.View) time.Duration {
 
 	if !cfg.IsSet(name) {
 		return defaultAssignedDeleteTimeout
+	}
+
+	return cfg.GetDuration(name)
+}
+
+func getPendingReleaseTimeout(cfg config.View) time.Duration {
+	const (
+		name = "pendingReleaseTimeout"
+		// Default timeout to release backfill. This value
+		// will be used if pendingReleaseTimeout is not configured.
+		defaultPendingReleaseTimeout = 1 * time.Minute
+	)
+
+	if !cfg.IsSet(name) {
+		return defaultPendingReleaseTimeout
 	}
 
 	return cfg.GetDuration(name)

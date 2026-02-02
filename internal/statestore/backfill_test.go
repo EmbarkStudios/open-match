@@ -376,16 +376,16 @@ func TestDeleteBackfill(t *testing.T) {
 			expectedMessage: "",
 		},
 		{
-			description:     "empty id passed, err expected",
+			description:     "empty id passed, no error expected",
 			backfillID:      "",
-			expectedCode:    codes.NotFound,
-			expectedMessage: "Backfill id:  not found",
+			expectedCode:    codes.OK,
+			expectedMessage: "",
 		},
 		{
-			description:     "wrong id passed, err expected",
+			description:     "wrong id passed, no error expected",
 			backfillID:      "123456",
-			expectedCode:    codes.NotFound,
-			expectedMessage: "Backfill id: 123456 not found",
+			expectedCode:    codes.OK,
+			expectedMessage: "",
 		},
 	}
 

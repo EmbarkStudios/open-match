@@ -460,14 +460,14 @@ func (rb *redisBackend) GetIndexedBackfills(ctx context.Context) (map[string]int
 
 func getBackfillReleaseTimeout(cfg config.View) time.Duration {
 	const (
-		name = "pendingReleaseTimeout"
+		name = "backfillReleaseTimeout"
 		// Default timeout to release backfill. This value
-		// will be used if pendingReleaseTimeout is not configured.
-		defaultpendingReleaseTimeout time.Duration = 1 * time.Minute
+		// will be used if backfillReleaseTimeout is not configured.
+		defaultBackfillReleaseTimeout = 1 * time.Minute
 	)
 
 	if !cfg.IsSet(name) {
-		return defaultpendingReleaseTimeout
+		return defaultBackfillReleaseTimeout
 	}
 
 	return cfg.GetDuration(name)

@@ -53,7 +53,8 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 		return status.Errorf(codes.Internal, "failed to marshal the ticket proto, id: %s: proto: Marshal called with nil", ticket.GetId())
 	}
 
-	_, err = redisConn.Do("SET", ticket.GetId(), value)
+	ticketDeletionTTL := getTicketDeleteTimeout(rb.cfg) / time.Millisecond
+	_, err = redisConn.Do("SET", ticket.GetId(), value, "PX", int64(ticketDeletionTTL))
 	if err != nil {
 		err = errors.Wrapf(err, "failed to set the value for ticket, id: %s", ticket.GetId())
 		return status.Errorf(codes.Internal, "%v", err)
@@ -540,6 +541,21 @@ func getAssignedDeleteTimeout(cfg config.View) time.Duration {
 
 	if !cfg.IsSet(name) {
 		return defaultAssignedDeleteTimeout
+	}
+
+	return cfg.GetDuration(name)
+}
+
+func getTicketDeleteTimeout(cfg config.View) time.Duration {
+	const (
+		name = "ticketDeleteTimeout"
+		// Default timeout to delete tickets after creation. This value
+		// will be used if ticketDeleteTimeout is not configured.
+		defaultTicketDeleteTimeout = 1 * time.Hour
+	)
+
+	if !cfg.IsSet(name) {
+		return defaultTicketDeleteTimeout
 	}
 
 	return cfg.GetDuration(name)

@@ -229,6 +229,10 @@
             "$ref": "#/definitions/openmatchAssignmentGroup"
           },
           "description": "Assignments is a list of assignment groups that contain assignment and the Tickets to which they should be applied."
+        },
+        "disallow_partial": {
+          "type": "boolean",
+          "description": "If set, all assignments will fail if at least one ticket is missing."
         }
       }
     },

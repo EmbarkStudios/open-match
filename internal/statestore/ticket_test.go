@@ -1071,6 +1071,7 @@ func createRedis(t *testing.T, withSentinel bool, withPassword string) (config.V
 	cfg.Set("backoff.maxElapsedTime", 100*time.Millisecond)
 	cfg.Set(telemetry.ConfigNameEnableMetrics, true)
 	cfg.Set("assignedDeleteTimeout", 1000*time.Millisecond)
+	cfg.Set("backfillReleaseTimeout", "200ms")
 
 	if withSentinel {
 		s := minisentinel.NewSentinel(mredis)

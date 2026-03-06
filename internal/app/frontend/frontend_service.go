@@ -362,7 +362,7 @@ func (s *frontendService) AcknowledgeBackfill(ctx context.Context, req *pb.Ackno
 
 		// log errors returned from UpdateAssignments to track tickets with NotFound errors
 		for _, f := range setResp.Failures {
-			logger.Errorf("failed to assign ticket %s, cause %d", f.TicketId, f.Cause)
+			logger.Warnf("failed to assign ticket %s, cause %d", f.TicketId, f.Cause)
 		}
 		for _, id := range associatedTickets {
 			err = s.store.DeindexTicket(ctx, id)

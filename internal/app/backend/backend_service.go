@@ -402,7 +402,7 @@ func createOrUpdateBackfill(ctx context.Context, backfill *pb.Backfill, ticketId
 	if b.Generation != backfill.Generation {
 		logger.WithFields(logrus.Fields{"backfill_id": backfill.Id}).
 			WithError(errBackfillGenerationMismatch).
-			Errorf("failed to update backfill, expecting: %d generation but got: %d", b.Generation, backfill.Generation)
+			Warnf("failed to update backfill, expecting: %d generation but got: %d", b.Generation, backfill.Generation)
 		return errBackfillGenerationMismatch
 	}
 

@@ -259,7 +259,7 @@ func (rb *redisBackend) DeleteBackfillCompletely(ctx context.Context, id string)
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
 			"backfill_id": id,
-		}).Error("DeleteBackfillCompletely - failed to GetBackfill")
+		}).Warn("DeleteBackfillCompletely - failed to GetBackfill")
 	}
 
 	// 3. delete associated tickets from pending release state
@@ -268,7 +268,7 @@ func (rb *redisBackend) DeleteBackfillCompletely(ctx context.Context, id string)
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
 			"backfill_id": id,
-		}).Error("DeleteBackfillCompletely - failed to DeleteTicketsFromPendingRelease")
+		}).Warn("DeleteBackfillCompletely - failed to DeleteTicketsFromPendingRelease")
 	}
 
 	// 4. delete backfill
@@ -277,7 +277,7 @@ func (rb *redisBackend) DeleteBackfillCompletely(ctx context.Context, id string)
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
 			"backfill_id": id,
-		}).Error("DeleteBackfillCompletely - failed to DeleteBackfill")
+		}).Warn("DeleteBackfillCompletely - failed to DeleteBackfill")
 	}
 
 	return nil
@@ -291,7 +291,7 @@ func (rb *redisBackend) cleanupWorker(ctx context.Context, backfillIDsCh <-chan 
 			logger.WithFields(logrus.Fields{
 				"error":       err.Error(),
 				"backfill_id": id,
-			}).Error("CleanupBackfills")
+			}).Warn("CleanupBackfills")
 		}
 		wg.Done()
 	}

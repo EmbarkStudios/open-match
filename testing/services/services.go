@@ -50,6 +50,8 @@ type Server struct {
 	// HTTPAddr is the "host:port" address for all Open Match HTTP services.
 	HTTPAddr string
 
+	RedisAddr string
+
 	// AdvanceTTLTime fast-forwards the in-memory Redis clock by the given
 	// duration. Use this in tests that exercise ticket or backfill TTLs to
 	// avoid real sleeps.
@@ -149,6 +151,7 @@ func Start(t *testing.T, evaluatorAddr string) *Server {
 		Frontend:       pb.NewFrontendServiceClient(conn),
 		Backend:        pb.NewBackendServiceClient(conn),
 		Query:          pb.NewQueryServiceClient(conn),
+		RedisAddr:      net.JoinHostPort(msentinel.Host(), msentinel.Port()),
 	}
 }
 
